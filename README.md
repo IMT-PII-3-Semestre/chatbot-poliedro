@@ -14,17 +14,6 @@ O **Chatbot Poliedro** é um sistema de atendimento automatizado que utiliza int
 - **Facilitar a comunicação** dos pedidos para a cozinha.
 - **Reduzir filas** e otimizar o atendimento no restaurante.
 
-### 👥 Público-Alvo e Stakeholders
-
-- **Estudantes**: Usuários principais do chatbot para realizar pedidos de maneira mais eficiente.
-- **Funcionários e Visitantes**: Usuários adicionais que utilizam o serviço de alimentação.
-- **Stakeholders**:
-  - Alunos
-  - Funcionários do Restaurante
-  - Equipe da Cozinha
-  - Gestores/Administração
-  - Equipe de TI
-  
 ---
 
 ## 🛠️ Tecnologias Empregadas
@@ -52,7 +41,7 @@ O projeto foi desenvolvido seguindo o framework **SCRUM**, com os seguintes pap�
 - **Desenvolvedores**:
   - Murilo Rodrigues
   - Pedro Henrique
-  - Henrique
+  - Henrique Impastaro
 
 ---
 | **Realização**                                  | **Apoio**                               |

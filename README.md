@@ -56,6 +56,6 @@ O projeto foi desenvolvido seguindo o framework **SCRUM**, com os seguintes pap√
 
 ---
 
-| ![Logo Poliedro](images/logo-poliedro-se.png) | ![Logo IMT](images/logo-IMT.png) |
-|:---------------------------------------------:|:--------------------------------:|
-| **Logo Poliedro**                              | **Logo IMT**                     |
+| <img src="images/logo-poliedro-se.png" width="150"> | <img src="images/logo-IMT.png" width="150"> |
+|:--------------------------------------------------:|:------------------------------------------:|
+| **Logo Poliedro**                                  | **Logo IMT**                               |

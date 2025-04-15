@@ -1,6 +1,6 @@
 # 🤖 Chatbot Poliedro
 
-Bem-vindo ao **Chatbot Poliedro**, um projeto interdisciplinar desenvolvido por alunos do curso de Ciências da Computação do Instituto Mauá de Tecnologia. Este sistema foi criado para otimizar o atendimento nos restaurantes das escolas Poliedro, reduzindo filas e melhorando a comunicação entre os clientes e a cozinha.
+Bem-vindo ao repositório do **Chatbot Poliedro**, um projeto interdisciplinar desenvolvido por alunos do curso de Ciências da Computação do Instituto Mauá de Tecnologia. Este sistema foi criado para otimizar o atendimento nos restaurantes das escolas Poliedro, reduzindo filas e melhorando a comunicação entre os clientes e a cozinha.
 
 ---
 

@@ -3,9 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
 
-    // --- Chaves de Armazenamento (Manter para uso futuro quando o LLM precisar do contexto do cardápio) ---
+    // --- Chaves de Armazenamento ---
     const KDS_STORAGE_KEY = 'pedidosCozinhaPendentes';
-    const MENU_STORAGE_KEY = 'restauranteMenu';
 
     // --- Manter Funções Auxiliares ---
     function generateOrderId() { // Função para gerar ID do pedido
@@ -20,33 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
         pendingOrders.push(order);
         localStorage.setItem(KDS_STORAGE_KEY, JSON.stringify(pendingOrders));
         console.log("Pedido salvo para cozinha:", order);
-    }
-
-    // --- Manter Carregamento do Cardápio (Pode ser necessário para contexto posteriormente) ---
-    let dynamicMenu = [];
-    function loadMenuFromStorage() { // Função para carregar cardápio do localStorage
-        const storedMenu = localStorage.getItem(MENU_STORAGE_KEY);
-        try {
-            dynamicMenu = storedMenu ? JSON.parse(storedMenu) : [];
-            console.log("Chatbot: Cardápio carregado do localStorage:", dynamicMenu);
-        } catch (e) {
-            console.error("Chatbot: Erro ao carregar ou analisar cardápio do localStorage:", e);
-            dynamicMenu = [];
-        }
-    }
-
-    function createChatMenu() { // Função para formatar cardápio para o chat (se necessário)
-        let chatMenu = {};
-        dynamicMenu.forEach((item, index) => {
-            const chatCode = (index + 1).toString();
-            // Assume que 'item' vindo do localStorage tem 'name' e 'price' (como salvo em kds.js)
-            // Cria o objeto para o chat com chaves 'nome' e 'preco'
-            chatMenu[chatCode] = {
-                nome: item.name,
-                preco: item.price
-            };
-        });
-        console.log("Chatbot: Cardápio formatado para chat (se necessário para contexto):", chatMenu);
     }
 
     // --- Manter Funções da Interface do Chat ---
@@ -68,9 +40,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message');
 
-        if (isHTML) {
+        if (sender === 'bot' && !isHTML) {
+            // Se for mensagem do bot e não for HTML explícito,
+            // substitui \n por <br> para renderizar quebras de linha
+            messageElement.innerHTML = text.replace(/\n/g, '<br>');
+        } else if (isHTML) {
+            // Se for HTML explícito (usado raramente, talvez para botões)
             messageElement.innerHTML = text;
         } else {
+            // Para mensagens do usuário ou se não for bot, usa textContent
             messageElement.textContent = text;
         }
 
@@ -117,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // --- NOVO: Função para Chamar o Backend Flask ---
+    // --- Função para Chamar o Backend Flask ---
     async function callChatAPI(userMessage) {
         const apiUrl = 'http://localhost:5000/chat'; // URL padrão da API
 
@@ -176,20 +154,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Ouvinte de Armazenamento (Manter para possíveis atualizações do cardápio) ---
-    window.addEventListener('storage', (event) => {
-        if (event.key === MENU_STORAGE_KEY) { // Se a chave modificada for a do cardápio
-            console.log("Chatbot: Detectada mudança no cardápio (localStorage). Recarregando...");
-            loadMenuFromStorage(); // Recarrega o cardápio
-            createChatMenu(); // Reformata o cardápio (se necessário para o contexto)
-        }
-    });
-
     // --- Atualizar startChat ---
     function startChat() { // Função para iniciar o chat
-        loadMenuFromStorage(); // Carrega o cardápio ao iniciar
-        createChatMenu(); // Formata o cardápio (se necessário)
-
         showTypingIndicator(); // Mostra indicador de "digitando" inicialmente
         setTimeout(() => { // Adiciona um pequeno atraso para efeito
             hideTypingIndicator();

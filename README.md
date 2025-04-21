@@ -1,6 +1,6 @@
 # 🤖 Chatbot Poliedro
 
-Bem-vindo ao repositório do **Chatbot Poliedro**, um projeto interdisciplinar desenvolvido por alunos do curso de Ciências da Computação do Instituto Mauá de Tecnologia. Este sistema visa otimizar o atendimento nos restaurantes das escolas Poliedro, reduzindo filas e aprimorando a comunicação entre clientes e cozinha.
+Bem-vindo ao repositório do **Chatbot Poliedro**, um projeto interdisciplinar desenvolvido por alunos do 3 curso de Ciências da Computação do Instituto Mauá de Tecnologia. Este sistema visa otimizar o atendimento nos restaurantes das escolas Poliedro, reduzindo filas e aprimorando a comunicação entre clientes e cozinha.
 
 ---
 
@@ -34,7 +34,7 @@ Este projeto utiliza uma combinação de tecnologias para o frontend, backend e 
 -   **Flask**: Microframework web para a API RESTful ([`chatbot/python-flask-llm-chatbot/src/app.py`](chatbot/python-flask-llm-chatbot/src/app.py)).
 -   **Flask-CORS**: Middleware para habilitar requisições Cross-Origin Resource Sharing (CORS).
 -   **Requests**: Biblioteca para realizar chamadas HTTP para a API do LLM ([`chatbot/python-flask-llm-chatbot/src/llm/integration.py`](chatbot/python-flask-llm-chatbot/src/llm/integration.py)).
--   **Ollama**: Plataforma externa para execução local de Modelos de Linguagem Grandes (LLMs), como o `deepseek-r1` (requer instalação e execução separadas).
+-   **Ollama**: Plataforma externa para execução local de Modelos de Linguagem Grandes (LLMs), como o `mistral` (requer instalação e execução separadas).
 
 ### Banco de Dados (Planejado)
 
@@ -60,7 +60,7 @@ Este projeto utiliza uma combinação de tecnologias para o frontend, backend e 
 
 1.  **Clone o repositório:**
     ```bash
-    git clone <URL do seu repositório>
+    git clone <INSERIR URL>
     cd chatbot-poliedro
     ```
 
@@ -78,16 +78,15 @@ Este projeto utiliza uma combinação de tecnologias para o frontend, backend e 
         # Ativar (macOS/Linux)
         source venv/bin/activate
         ```
-        *(Use `deactivate` para sair do ambiente virtual)*
     *   Instale as dependências Python:
         ```bash
         pip install -r requirements.txt
         ```
     *   Baixe o modelo LLM necessário via Ollama (certifique-se que o Ollama está rodando):
         ```bash
-        ollama pull deepseek-r1
+        ollama pull mistral
         ```
-        *(O modelo padrão é `deepseek-r1`, configurado em `src/app.py`. O backend espera que o Ollama esteja acessível em `http://localhost:11434`)*
+        *(O modelo padrão é `mistral`, configurado em `src/app.py`. O backend espera que o Ollama esteja acessível em `http://localhost:11434`)*
 
 3.  **Execute o Backend:**
     *   Ainda no diretório `chatbot/python-flask-llm-chatbot` e com o ambiente virtual ativado:

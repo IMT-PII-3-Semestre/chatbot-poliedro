@@ -23,5 +23,10 @@
         "id": "item_1745231302040_ac4555",
         "name": "teste 2",
         "price": 2
+    },
+    {
+        "id": "item_1745231598373_baff71",
+        "name": "teste 3",
+        "price": 3
     }
 ]

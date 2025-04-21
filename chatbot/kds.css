@@ -14,84 +14,61 @@ body {
 }
 
 .kds-header {
-    background-color: #34495e;
-    color: #ffffff;
-    padding: 10px 30px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap; /* Permite quebrar linha em telas menores */
-    gap: 10px;
+    background-color: #ffffff; /* White header background */
+    color: #343a40; /* Darker text */
+    padding: 15px 25px; /* Adjust padding */
+    margin-bottom: 20px; /* Space below header */
+    border-radius: 8px; /* Rounded corners */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Softer shadow */
+    border-bottom: 1px solid #e9ecef;
 }
 
-.header-title h1 { /* Seleciona h1 dentro da div de título */
-    font-size: 1.5em;
-    font-weight: 500;
-    margin: 0; /* Remove margem padrão */
-    display: flex;
-    align-items: center;
-}
-.header-title h1 i {
-    margin-right: 10px;
+.kds-header h1 {
+    font-size: 1.6em;
+    font-weight: 600; /* Slightly bolder */
 }
 
-/* Estilos da Navegação por Abas */
-.header-nav {
+/* --- Tab Navigation Styling --- */
+.tabs {
     display: flex;
-    gap: 5px; /* Espaço entre as abas */
-    background-color: rgba(255, 255, 255, 0.1); /* Fundo levemente transparente */
-    border-radius: 6px;
-    padding: 5px;
+    justify-content: center; /* Center the tab buttons within the nav bar */
+    background-color: #ffffff; /* White background */
+    border-bottom: 1px solid #dee2e6; /* Lighter border */
+    margin-bottom: 25px; /* More space below tabs */
+    padding: 0 10px; /* Add some horizontal padding if needed */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    width: 100%; /* Ensure the nav bar takes full width */
 }
 
+/* Styles for .nav-tab remain the same as provided before */
 .nav-tab {
-    background: none;
+    padding: 12px 25px; /* Increased padding for better spacing */
+    margin: 0 5px; /* Small space between tabs */
     border: none;
-    color: #e0e0e0;
-    padding: 8px 15px;
-    border-radius: 4px;
+    background-color: transparent;
     cursor: pointer;
-    font-size: 0.9em;
-    font-weight: 500;
-    transition: background-color 0.2s, color 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.nav-tab:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-}
-.nav-tab.active {
-    background-color: #ffffff;
-    color: #34495e; /* Cor escura para o texto da aba ativa */
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.nav-tab i {
-    font-size: 1.1em;
+    font-size: 1.05em; /* Slightly larger font */
+    color: #6c757d; /* Greyish color for inactive tabs */
+    border-bottom: 4px solid transparent; /* Thicker transparent border for alignment */
+    transition: color 0.3s ease, border-bottom-color 0.3s ease; /* Smooth transition */
+    text-align: center;
+    white-space: nowrap; /* Prevent text wrapping */
 }
 
-#sound-control button {
-    background: none;
-    border: 1px solid white;
-    color: white;
-    padding: 8px 10px;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    cursor: pointer;
-    font-size: 1em;
-    transition: background-color 0.2s, border-color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.nav-tab:hover {
+    color: #495057; /* Darker grey on hover */
+    border-bottom-color: #e9ecef; /* Subtle underline on hover */
 }
-#sound-control button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+
+.nav-tab.active {
+    color: #0d6efd; /* Bootstrap primary blue for active tab */
+    border-bottom-color: #0d6efd; /* Matching underline for active tab */
+    font-weight: 600; /* Slightly bolder active tab */
 }
-#sound-control button i.fa-volume-mute {
-    color: #aaa; /* Cor do ícone de mudo */
+
+.nav-tab i { /* Style icons within tabs */
+    margin-right: 8px;
+    font-size: 0.95em; /* Adjust icon size relative to text */
 }
 
 /* Troca de Visão Principal */
@@ -104,116 +81,152 @@ body {
 }
 
 /* Estilos Específicos do KDS */
-.order-list-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Grid responsivo */
-    gap: 20px;
+.kds-main {
+    background-color: #f8f9fa; /* Slightly off-white background for the view */
 }
 
-.order-card {
+.kds-orders-section {
+    /* Container for the grid */
+}
+
+.kds-orders-container {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Responsive grid */
+    gap: 25px; /* Space between cards */
+}
+
+.kds-order-item {
     background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 15px 20px;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 10px; /* More rounded corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Slightly stronger shadow */
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    position: relative; /* Necessário para posicionar o timestamp */
-    overflow: hidden; /* Necessário para algumas animações */
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border-left: 5px solid #5C67E0; /* Borda colorida indicando pendente */
-}
-/* Animação para novos pedidos */
-.order-card.new {
-    animation: newOrderHighlight 1.5s ease-out;
-    border-left-color: #f39c12; /* Laranja para destaque de novo pedido */
-}
-@keyframes newOrderHighlight {
-  0% { background-color: #fdf5e6; transform: scale(1.02); } /* Cor de fundo suave + leve zoom */
-  70% { background-color: #fdf5e6; transform: scale(1.02); }
-  100% { background-color: #ffffff; transform: scale(1); }
+    border-left: 6px solid #0d6efd; /* Accent color border (blue) */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    position: relative; /* For absolute positioning inside */
+    overflow: hidden; /* Hide overflow for potential effects */
 }
 
-.order-card h2 {
-    font-size: 1.3em;
-    font-weight: 700;
-    color: #34495e;
-    margin-bottom: 10px;
-    border-bottom: 1px dashed #eee;
-    padding-bottom: 8px;
+.kds-order-item:hover {
+    transform: translateY(-3px); /* Slight lift on hover */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
-.order-card h2 .order-id {
-    color: #e74c3c; /* Destaca o ID do pedido */
-    font-weight: bold;
+/* Optional: Animation for new items */
+.kds-order-item.new {
+    animation: fadeInSlideUp 0.5s ease-out forwards;
+    border-left-color: #ffc107; /* Yellow border for new */
 }
 
-.order-card .items-list {
-    list-style: none;
-    padding-left: 0;
-    margin-bottom: 15px;
-    flex-grow: 1; /* Empurra o botão 'Concluir' para baixo */
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.order-card .items-list li {
-    margin-bottom: 5px;
-    font-size: 1em;
-    padding-left: 1.2em;
-    position: relative;
-}
-/* Ícone simples antes do item do pedido */
-.order-card .items-list li::before {
-    content: "\f0f5"; /* Ícone de talher/prato (utensils) do Font Awesome */
-    font-family: "Font Awesome 6 Free";
-    font-weight: 900;
-    position: absolute;
-    left: 0;
-    color: #5C67E0;
-}
-
-.order-card .timestamp {
-    font-size: 0.8em;
-    color: #777;
-    text-align: right;
-    margin-top: 10px;
-    position: absolute; /* Posiciona no canto inferior direito */
-    bottom: 15px;
-    right: 20px;
-    font-style: italic;
-}
-
-.order-card .complete-button {
-    background-color: #2ecc71; /* Verde para concluir */
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 500;
-    width: 100%;
-    margin-top: 15px;
-    transition: background-color 0.2s;
+.kds-order-item .order-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    justify-content: center;
-    gap: 8px; /* Espaço entre texto e ícone */
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0; /* Lighter separator */
 }
 
-.order-card .complete-button:hover {
-    background-color: #27ae60; /* Verde mais escuro no hover */
+.kds-order-item .order-header strong {
+    font-size: 1.1em;
+    color: #343a40;
 }
 
-.order-card .complete-button i {
-     font-size: 0.9em;
+.kds-order-item .order-time {
+    font-size: 0.85em;
+    color: #6c757d; /* Muted color for time */
+    background-color: #e9ecef; /* Subtle background pill */
+    padding: 3px 8px;
+    border-radius: 12px; /* Pill shape */
 }
 
+.kds-order-item .order-items {
+    margin-bottom: 20px; /* More space before footer */
+    flex-grow: 1; /* Allows footer to stick to bottom */
+    font-size: 0.95em;
+    line-height: 1.7; /* Better line spacing */
+    color: #495057;
+}
+
+.kds-order-item .order-footer {
+    display: flex;
+    justify-content: space-between; /* Pushes status and buttons apart */
+    align-items: center;
+    margin-top: auto; /* Pushes footer to bottom if content is short */
+    padding-top: 15px;
+    border-top: 1px solid #f0f0f0; /* Lighter separator */
+}
+
+.kds-order-item .order-footer span {
+    font-size: 0.9em;
+    font-weight: 500;
+    color: #495057;
+}
+
+.kds-order-item .order-footer .kds-buttons-group {
+    display: flex;
+    gap: 8px; /* Space between buttons */
+}
+
+/* --- KDS Button Styles --- */
+.kds-button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 500;
+    transition: background-color 0.2s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.kds-button:hover {
+    transform: scale(1.03); /* Slight scale effect */
+}
+
+.kds-button.complete-button {
+    background-color: #198754; /* Bootstrap success green */
+    color: white;
+}
+.kds-button.complete-button:hover {
+    background-color: #157347;
+}
+
+.kds-button.cancel-button {
+    background-color: #dc3545; /* Bootstrap danger red */
+    color: white;
+}
+.kds-button.cancel-button:hover {
+    background-color: #bb2d3b;
+}
+
+/* --- No Orders Message --- */
 .no-orders {
     text-align: center;
-    font-size: 1.2em;
-    color: #777;
-    padding: 40px;
-    grid-column: 1 / -1; /* Ocupa todas as colunas do grid quando visível */
+    padding: 50px 20px;
+    font-size: 1.1em;
+    color: #6c757d;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    grid-column: 1 / -1; /* Span all grid columns */
+    border: 1px dashed #ced4da;
 }
 
 /* Estilos Específicos da Visão Admin */
@@ -410,25 +423,11 @@ body {
 
 @media (max-width: 600px) {
     .kds-header {
-        padding: 10px 15px;
-        flex-direction: column;
-        align-items: stretch;
+        padding: 12px 15px;
     }
-    .header-title h1 {
-        font-size: 1.3em;
-        justify-content: center;
-        margin-bottom: 10px;
+    .kds-header h1 {
+        font-size: 1.4em;
     }
-    .header-nav {
-        justify-content: center;
-        width: 100%;
-    }
-    #sound-control {
-        position: absolute; /* Posiciona botão de som no canto superior direito */
-        top: 15px;
-        right: 15px;
-    }
-
     .main-view {
         padding: 15px;
     }
@@ -469,5 +468,15 @@ body {
     }
     .action-buttons .btn {
         padding: 4px 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .kds-orders-container {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Slightly smaller min width */
+        gap: 15px;
+    }
+    .kds-order-item {
+        padding: 15px;
     }
 }

@@ -8,44 +8,43 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
 </head>
 <body>
-    <header class="kds-header">
-        <div class="header-title">
-             <h1><i class="fas fa-utensils"></i> Painel Cozinha / Admin</h1>
-        </div>
-        <nav class="header-nav">
-            <button id="tab-kds" class="nav-tab active" data-target="kds-view">
-                <i class="fas fa-clipboard-list"></i> Pedidos Pendentes
-            </button>
-            <button id="tab-admin" class="nav-tab" data-target="admin-view">
-                <i class="fas fa-edit"></i> Gerenciar Cardápio
-            </button>
-        </nav>
-        <div id="sound-control">
-             <button id="toggle-sound" title="Ativar/Desativar Som"><i class="fas fa-volume-high"></i></button>
-        </div>
-    </header>
 
-    <!-- Visão KDS (Pedidos) -->
-    <main id="kds-view" class="main-view active-view kds-main">
-        <div id="order-list" class="order-list-container">
-            <!-- Os cards de pedido serão inseridos aqui -->
-             <div id="no-orders-message" class="no-orders">Nenhum pedido pendente no momento.</div>
-        </div>
+    <!-- Abas de Navegação -->
+    <nav class="tabs">
+        <button id="tab-kds" class="nav-tab active" data-target="kds-view">
+            <i class="fas fa-clipboard-list"></i> Pedidos Pendentes
+        </button>
+        <button id="tab-admin" class="nav-tab" data-target="admin-view">
+            <i class="fas fa-edit"></i> Gerenciar Cardápio
+        </button>
+    </nav>
+
+    <!-- KDS View (Pedidos Pendentes) -->
+    <main id="kds-view" class="main-view kds-main active-view"> <!-- Inicia ativa -->
+        <header class="kds-header">
+            <h1><i class="fas fa-clipboard-list"></i> Pedidos Pendentes</h1>
+        </header>
+        <section class="kds-orders-section">
+            <ul id="kds-orders-list" class="kds-orders-container">
+                <!-- Pedidos serão inseridos aqui pelo kds.js -->
+                <li class="no-orders">Carregando pedidos...</li>
+            </ul>
+        </section>
     </main>
 
-    <!-- Visão Admin (Gerenciar Cardápio) -->
-    <main id="admin-view" class="main-view admin-main" style="display: none;">
+    <!-- Admin View (Gerenciar Cardápio) -->
+    <main id="admin-view" class="main-view admin-main" style="display: none;"> <!-- Inicia escondida -->
         <section class="form-section card">
-            <h2><i class="fas fa-plus-circle"></i> Adicionar / Editar Item do Cardápio</h2>
+            <h2><i class="fas fa-plus-circle"></i> Adicionar / Editar Item</h2> <!-- Título simplificado -->
             <form id="menu-item-form">
-                <input type="hidden" id="edit-item-id">
+                <input type="hidden" id="edit-item-id"> <!-- Campo oculto para ID em edição -->
                 <div class="admin-form-group">
                     <label for="item-name">Nome do Item:</label>
                     <input type="text" id="item-name" required placeholder="Ex: Suco de Laranja">
                 </div>
                 <div class="admin-form-group">
                     <label for="item-price">Preço (R$):</label>
-                    <input type="number" id="item-price" step="0.01" min="0" required placeholder="Ex: 8.50">
+                    <input type="text" id="item-price" inputmode="decimal" required placeholder="Ex: 8,50 ou 8.50"> <!-- Usar text e inputmode para melhor UX mobile, validação no JS/backend -->
                 </div>
                 <div class="admin-form-actions">
                     <button type="submit" id="save-button" class="btn btn-primary">
@@ -55,7 +54,7 @@
                         <i class="fas fa-times"></i> Cancelar Edição
                     </button>
                 </div>
-                 <p id="form-message" class="admin-form-message"></p>
+                <p id="form-message" class="admin-form-message"></p> <!-- Para mensagens de sucesso/erro -->
             </form>
         </section>
 
@@ -71,8 +70,8 @@
                         </tr>
                     </thead>
                     <tbody id="menu-table-body">
-                        <!-- Linhas do cardápio serão inseridas aqui -->
-                         <tr id="no-menu-items-row" style="display: none;">
+                        <!-- Linhas do cardápio serão inseridas aqui pelo kds.js -->
+                        <tr id="no-menu-items-row" style="display: none;">
                             <td colspan="3" class="no-items-message">Nenhum item cadastrado no cardápio.</td>
                         </tr>
                     </tbody>
@@ -81,9 +80,10 @@
         </section>
     </main>
 
-    <!-- Áudio de notificação (continua o mesmo) -->
+    <!-- Áudio de notificação -->
     <audio id="notification-sound" src="notification.mp3" preload="auto"></audio>
 
+    <!-- Script KDS -->
     <script src="kds.js"></script>
 </body>
 </html>

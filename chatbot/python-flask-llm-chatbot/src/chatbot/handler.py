@@ -1,18 +1,31 @@
 class ChatbotHandler:
+    """
+    Classe responsável por intermediar a comunicação entre a aplicação Flask
+    e a integração com o LLM.
+    """
     def __init__(self, llm_integration):
-        # Garante que llm_integration seja armazenado
+        """
+        Inicializa o handler com uma instância da integração LLM.
+
+        Args:
+            llm_integration: Objeto responsável pela comunicação com o LLM.
+        """
+        if llm_integration is None:
+             raise ValueError("llm_integration não pode ser None")
         self.llm_integration = llm_integration
 
     def process_input(self, user_input):
-        # Processa a entrada do usuário e gera uma resposta usando o LLM
-        # Podemos adicionar mais lógica aqui depois (por exemplo, pré-processamento, gerenciamento de contexto)
+        """
+        Processa a entrada do usuário, chama o LLM para gerar uma resposta.
+
+        Args:
+            user_input (str): A mensagem enviada pelo usuário.
+
+        Returns:
+            str: A resposta gerada pelo LLM ou uma mensagem de erro.
+        """
+        # Delega a geração da resposta para a classe de integração LLM
+        # Futuramente, pode incluir lógica adicional como gerenciamento de histórico,
+        # pré/pós-processamento, etc.
         response = self.llm_integration.generate_response(user_input)
         return response
-
-    def handle_request(self, user_input):
-        # Lida com a solicitação recebida do usuário através do aplicativo Flask
-        response_text = self.process_input(user_input)
-        # Retorna a resposta em um formato de dicionário esperado pelo frontend
-        return {
-            'response': response_text
-        }

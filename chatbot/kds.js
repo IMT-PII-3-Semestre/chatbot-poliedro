@@ -30,6 +30,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentlyDisplayedOrderIds = new Set();
     let menuItems = []; // Array para guardar itens do cardápio {id, name, price}
 
+    // --- APENAS PARA DESENVOLVIMENTO/DEBUGGING: Função para popular cardápio padrão se vazio ---
+    function initializeDefaultMenu() {
+        const storedMenu = localStorage.getItem(MENU_STORAGE_KEY);
+        // Verifica se não existe ou está vazio/inválido (considera '[]' como vazio)
+        if (!storedMenu || storedMenu === '[]') {
+            console.log("Cardápio não encontrado no localStorage. Inicializando com itens padrão.");
+            const defaultMenu = [
+                { id: `menu_default_1`, name: "Hambúrguer Clássico", price: 15.50 },
+                { id: `menu_default_2`, name: "Batata Frita (Média)", price: 8.00 },
+                { id: `menu_default_3`, name: "Refrigerante Lata", price: 5.00 }
+                // Adicione mais itens padrão se desejar
+            ];
+            // Define a variável local E salva no localStorage
+            menuItems = defaultMenu;
+            saveMenu(); // Usa a função saveMenu existente para salvar
+        } else {
+            console.log("Cardápio encontrado no localStorage. Carregando existente.");
+            // Se já existe, a função loadMenu() cuidará de carregá-lo
+        }
+    }
+
     // ========================================================================
     // Funções KDS (Pedidos Pendentes)
     // ========================================================================
@@ -179,8 +200,16 @@ document.addEventListener('DOMContentLoaded', () => {
      * Carrega os itens do cardápio do localStorage.
      */
     function loadMenu() {
-        const storedMenu = localStorage.getItem(MENU_STORAGE_KEY);
-        menuItems = storedMenu ? JSON.parse(storedMenu) : [];
+        // Se initializeDefaultMenu já populou menuItems, não precisa ler do storage novamente aqui
+        if (menuItems.length === 0) {
+            const storedMenu = localStorage.getItem(MENU_STORAGE_KEY);
+            try {
+                menuItems = storedMenu ? JSON.parse(storedMenu) : [];
+            } catch (e) {
+                console.error("Erro ao analisar cardápio do localStorage em loadMenu:", e);
+                menuItems = [];
+            }
+        }
         console.log("Menu carregado:", menuItems);
     }
 
@@ -396,7 +425,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ========================================================================
     // Inicialização
     // ========================================================================
-    loadMenu();         // Carrega dados do cardápio primeiro
+    initializeDefaultMenu(); // <-- CHAMA A NOVA FUNÇÃO AQUI, ANTES DE LOADMENU - PARA TESTE/DEBUG
+    // Inicializa o cardápio padrão se não existir
+    loadMenu();         // Carrega dados do cardápio (padrão ou existente)
     renderMenuTable();  // Renderiza a tabela do cardápio
     renderOrders();     // Renderiza os pedidos KDS
     switchView('kds-view'); // Começa na visão KDS por padrão

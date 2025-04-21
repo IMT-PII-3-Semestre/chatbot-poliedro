@@ -60,7 +60,7 @@ Este projeto utiliza uma combinação de tecnologias para o frontend, backend e 
 
 1.  **Clone o repositório:**
     ```bash
-    git clone <INSERIR URL>
+    git clone <https://github.com/IMT-PII-3-Semestre/chatbot-poliedro>
     cd chatbot-poliedro
     ```
 

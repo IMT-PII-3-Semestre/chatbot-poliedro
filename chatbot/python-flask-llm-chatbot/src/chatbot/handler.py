@@ -25,7 +25,6 @@ class ChatbotHandler:
             str: A resposta gerada pelo LLM ou uma mensagem de erro.
         """
         # Delega a geração da resposta para a classe de integração LLM
-        # Futuramente, pode incluir lógica adicional como gerenciamento de histórico,
-        # pré/pós-processamento, etc.
+        # Futuramente, pode incluir lógica adicional como gerenciamento de histórico, pré/pós-processamento, etc.
         response = self.llm_integration.generate_response(user_input)
         return response

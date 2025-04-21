@@ -1,32 +1,32 @@
 [
     {
-        "id": "menu_default_1",
+        "id": "item_0",
         "name": "Hambúrguer Clássico",
         "price": 15.5
     },
     {
-        "id": "menu_default_2",
+        "id": "item_1",
         "name": "Batata Frita (Média)",
-        "price": 8
+        "price": 8.0
     },
     {
-        "id": "menu_default_3",
+        "id": "item_2",
         "name": "Refrigerante Lata",
-        "price": 5
+        "price": 5.0
     },
     {
-        "id": "menu_1745227792155_p6f31",
-        "name": "teste",
-        "price": 1
+        "id": "item_3",
+        "name": "Teste",
+        "price": 1.0
     },
     {
-        "id": "item_1745231302040_ac4555",
-        "name": "teste 2",
-        "price": 2
+        "id": "item_4",
+        "name": "Teste 2",
+        "price": 2.0
     },
     {
-        "id": "item_1745231598373_baff71",
+        "id": "item_1745272362355_d83738",
         "name": "teste 3",
-        "price": 3
+        "price": 3.0
     }
 ]

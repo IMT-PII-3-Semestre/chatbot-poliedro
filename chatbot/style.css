@@ -12,36 +12,34 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    /* Gradiente suave e moderno */
-    background: linear-gradient(135deg, #ece9e6 0%, #ffffff 100%);
+    background: linear-gradient(135deg, #ece9e6 0%, #ffffff 100%); /* Gradiente suave */
     padding: 15px;
 }
 
 .chat-container {
     width: 100%;
-    max-width: 550px; /* Um pouco mais largo para desktop */
+    max-width: 550px; /* Largura máxima */
     height: 85vh;
     max-height: 750px;
     background-color: #ffffff;
-    border-radius: 20px; /* Cantos mais arredondados */
-    box-shadow: 0 15px 40px rgba(40, 40, 90, 0.12); /* Sombra mais pronunciada */
+    border-radius: 20px; /* Cantos arredondados */
+    box-shadow: 0 15px 40px rgba(40, 40, 90, 0.12); /* Sombra */
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
 .chat-header {
-    background: linear-gradient(135deg, #6572e6 0%, #5c67e0 100%); /* Gradiente no Header */
+    background: linear-gradient(135deg, #6572e6 0%, #5c67e0 100%); /* Gradiente no cabeçalho */
     color: #ffffff;
     padding: 15px 25px;
-    border-bottom: none; /* Remover borda, usar sombra */
     border-radius: 20px 20px 0 0;
     flex-shrink: 0;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Sombra suave no header */
-    position: relative; /* Para o brilho sutil (opcional) */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Sombra */
+    position: relative;
     z-index: 1;
 }
-/* Brilho sutil no header (opcional) */
+/* Efeito de brilho sutil no cabeçalho (opcional) */
 .chat-header::before {
     content: '';
     position: absolute;
@@ -60,7 +58,7 @@ body {
     align-items: center;
 }
 
-.header-content i.fa-robot { /* Estilo específico para o ícone do bot */
+.header-content i.fa-robot { /* Ícone do bot no cabeçalho */
     font-size: 1.8em;
     margin-right: 15px;
     opacity: 0.9;
@@ -82,16 +80,16 @@ body {
 
 
 .chat-box {
-    flex-grow: 1;
-    padding: 25px; /* Mais espaço interno */
-    overflow-y: auto;
-    background-color: #f7f8fa; /* Fundo do chat claro */
+    flex-grow: 1; /* Ocupa espaço disponível */
+    padding: 25px; /* Espaçamento interno */
+    overflow-y: auto; /* Habilita rolagem vertical */
+    background-color: #f7f8fa; /* Fundo claro para área de mensagens */
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 10px; /* Espaço entre mensagens */
 }
 
-/* Estilização da Scrollbar */
+/* Estilização da Barra de Rolagem (Webkit) */
 .chat-box::-webkit-scrollbar {
     width: 8px;
 }
@@ -111,19 +109,19 @@ body {
     display: flex;
     align-items: flex-end; /* Alinha avatar com a base da mensagem */
     margin-bottom: 10px;
-    opacity: 0; /* Para animação */
-    transform: translateY(10px); /* Começa um pouco abaixo para animação */
-    animation: fadeInUp 0.4s ease-out forwards;
+    opacity: 0; /* Para animação de entrada */
+    transform: translateY(10px); /* Posição inicial para animação */
+    animation: fadeInUp 0.4s ease-out forwards; /* Aplica animação */
 }
 
 .message-wrapper.user {
-    justify-content: flex-end;
+    justify-content: flex-end; /* Alinha mensagem do usuário à direita */
 }
 .message-wrapper.bot {
-    justify-content: flex-start;
+    justify-content: flex-start; /* Alinha mensagem do bot à esquerda */
 }
 
-/* Estilos para o indicador de "digitando" */
+/* Indicador de "digitando" (bolinhas) */
 .message-wrapper.bot .typing-indicator {
     display: flex;
     align-items: center;
@@ -134,21 +132,22 @@ body {
 .typing-indicator span {
     height: 8px;
     width: 8px;
-    background-color: #aaa; /* Cor das bolinhas */
+    background-color: #aaa;
     border-radius: 50%;
     display: inline-block;
     margin: 0 2px;
-    animation: bounce 1.4s infinite ease-in-out both;
+    animation: bounce 1.4s infinite ease-in-out both; /* Animação de pulo */
 }
 
+/* Atraso na animação para criar efeito escalonado */
 .typing-indicator span:nth-child(1) {
     animation-delay: -0.32s;
 }
-
 .typing-indicator span:nth-child(2) {
     animation-delay: -0.16s;
 }
 
+/* Animação das bolinhas */
 @keyframes bounce {
     0%, 80%, 100% {
         transform: scale(0);
@@ -166,75 +165,74 @@ body {
     justify-content: center;
     color: white;
     font-size: 1em;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Impede que o avatar encolha */
     font-weight: 600;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .message-wrapper.user .avatar {
     margin-left: 10px;
-    background: linear-gradient(135deg, #5c67e0, #4a56c0); /* Avatar do usuário com gradiente */
-    /* Letra inicial (requer JS para adicionar a letra ou usar ícone) */
+    background: linear-gradient(135deg, #5c67e0, #4a56c0); /* Gradiente para avatar do usuário */
+    /* A letra inicial pode ser alterada no JS */
 }
 .message-wrapper.bot .avatar {
      margin-right: 10px;
-     background: linear-gradient(135deg, #a0a8c0, #8c96b0); /* Avatar do bot mais neutro */
-     /* Usaremos o ícone via Font Awesome (adicionado no JS) */
-     font-size: 1.2em; /* Aumenta o tamanho do ícone no avatar */
+     background: linear-gradient(135deg, #a0a8c0, #8c96b0); /* Gradiente neutro para avatar do bot */
+     font-size: 1.2em; /* Tamanho do ícone (Font Awesome) */
 }
 
 .message-content {
-    max-width: 75%; /* Limita a largura da bolha */
+    max-width: 75%; /* Largura máxima da bolha de mensagem */
 }
 
 .message {
-    padding: 12px 18px; /* Mais padding interno */
-    border-radius: 20px; /* Bolhas bem arredondadas */
-    line-height: 1.5; /* Melhor legibilidade */
-    word-wrap: break-word;
+    padding: 12px 18px; /* Espaçamento interno da bolha */
+    border-radius: 20px; /* Cantos arredondados */
+    line-height: 1.5; /* Espaçamento entre linhas */
+    word-wrap: break-word; /* Quebra palavras longas */
     box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-    position: relative;
+    position: relative; /* Necessário para a "cauda" */
     font-size: 0.95em;
 }
 
-.bot-message .message {
-    background-color: #ffffff; /* Fundo branco para o bot */
+.message-wrapper.bot .message { /* Estilo específico para bolha do bot */
+    background-color: #ffffff;
     color: #333;
-    border-bottom-left-radius: 5px; /* Quebra o arredondamento */
+    border-bottom-left-radius: 5px; /* Quebra o arredondamento para a cauda */
 }
 
-.user-message .message {
+.message-wrapper.user .message { /* Estilo específico para bolha do usuário */
     background-color: #5C67E0; /* Cor principal */
     color: #ffffff;
-    border-bottom-right-radius: 5px; /* Quebra o arredondamento */
+    border-bottom-right-radius: 5px; /* Quebra o arredondamento para a cauda */
 }
 
-/* Pseudo-elemento para a "cauda" da bolha */
+/* Pseudo-elemento para criar a "cauda" da bolha */
 .message::before {
     content: "";
     position: absolute;
     bottom: 0px;
     width: 0;
     height: 0;
-    border: 10px solid transparent;
+    border: 10px solid transparent; /* Triângulo base */
 }
 
-.bot-message .message::before {
-    left: -10px;
-    border-right-color: #ffffff;
+.message-wrapper.bot .message::before { /* Cauda para a bolha do bot */
+    left: -10px; /* Posiciona à esquerda */
+    border-right-color: #ffffff; /* Cor da bolha */
     border-left: 0;
-    border-bottom: 0; /* Ajusta forma do triângulo */
+    border-bottom: 0; /* Ajusta formato do triângulo */
 }
 
-.user-message .message::before {
-    right: -10px;
-    border-left-color: #5C67E0;
+.message-wrapper.user .message::before { /* Cauda para a bolha do usuário */
+    right: -10px; /* Posiciona à direita */
+    border-left-color: #5C67E0; /* Cor da bolha */
     border-right: 0;
-     border-bottom: 0; /* Ajusta forma do triângulo */
+    border-bottom: 0; /* Ajusta formato do triângulo */
 }
 
 
-.message code {
+.message code { /* Estilo para código inline */
     background-color: rgba(0, 0, 0, 0.07);
     padding: 2px 6px;
     border-radius: 4px;
@@ -242,10 +240,10 @@ body {
     font-size: 0.9em;
 }
 
-.message pre {
-    white-space: pre-wrap;
+.message pre { /* Estilo para blocos de código */
+    white-space: pre-wrap; /* Mantém quebras de linha e espaços */
     font-size: 0.9em;
-    background-color: #f0f2f5; /* Fundo levemente diferente para destaque */
+    background-color: #f0f2f5;
     padding: 12px;
     border-radius: 10px;
     border: 1px solid #e5e7eb;
@@ -254,19 +252,19 @@ body {
     font-family: 'Consolas', 'Monaco', monospace;
 }
 
-/* Estilo para botões de chat melhorado */
+/* Container para botões dentro de uma mensagem */
 .chat-button-container {
-    display: flex; /* Usa flexbox para os botões */
+    display: flex;
     flex-wrap: wrap; /* Permite que botões quebrem linha */
-    gap: 8px; /* Espaço entre os botões */
-    margin-top: 10px; /* Espaço acima dos botões */
+    gap: 8px; /* Espaço entre botões */
+    margin-top: 10px;
 }
 
-.chat-button {
+.chat-button { /* Estilo dos botões dentro das mensagens */
     display: inline-block;
     background-color: #5c67e0;
     color: white;
-    padding: 8px 16px; /* Mais padding horizontal */
+    padding: 8px 16px;
     border: none;
     border-radius: 18px; /* Bordas arredondadas */
     cursor: pointer;
@@ -276,31 +274,29 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .chat-button:hover {
-    background-color: #4a56c0; /* Escurece no hover */
-    transform: translateY(-1px); /* Efeito leve de elevação */
+    background-color: #4a56c0;
+    transform: translateY(-1px); /* Efeito de elevação */
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
-.chat-button.cancel {
+.chat-button.cancel { /* Estilo para botão de cancelar */
     background-color: #e74c3c;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 .chat-button.cancel:hover {
     background-color: #c0392b;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
-.input-area {
+.input-area { /* Área de digitação na parte inferior */
     display: flex;
     align-items: center;
-    padding: 15px 20px; /* Mais padding */
+    padding: 15px 20px;
     border-top: 1px solid #e8e8e8;
     background-color: #f0f2f5; /* Fundo levemente acinzentado */
     border-radius: 0 0 20px 20px;
     flex-shrink: 0;
 }
 
-#user-input {
-    flex-grow: 1;
+#user-input { /* Campo de texto para o usuário digitar */
+    flex-grow: 1; /* Ocupa espaço disponível */
     padding: 12px 20px; /* Input maior */
     border: 1px solid #dcdcdc;
     border-radius: 22px; /* Completamente arredondado */
@@ -313,63 +309,36 @@ body {
 
 #user-input:focus {
     border-color: #a0a8c0;
-    box-shadow: 0 0 0 3px rgba(92, 103, 224, 0.15); /* Glow sutil no foco */
+    box-shadow: 0 0 0 3px rgba(92, 103, 224, 0.15); /* Efeito de foco */
 }
 
-#send-button {
-    background: linear-gradient(135deg, #6572e6, #5c67e0); /* Gradiente no botão */
+#send-button { /* Botão de enviar mensagem */
+    background: linear-gradient(135deg, #6572e6, #5c67e0); /* Gradiente */
     color: white;
     border: none;
-    width: 44px; /* Tamanho fixo */
-    height: 44px; /* Tamanho fixo */
-    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%; /* Botão redondo */
     cursor: pointer;
     font-size: 1.3em; /* Ícone maior */
     transition: all 0.2s ease-in-out;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0; /* Impede que encolha */
+    flex-shrink: 0;
     box-shadow: 0 3px 6px rgba(0,0,0,0.1);
 }
 
 #send-button:hover {
-    background: linear-gradient(135deg, #5c67e0, #4a56c0); /* Escurece */
-    transform: scale(1.05); /* Leve aumento */
+    background: linear-gradient(135deg, #5c67e0, #4a56c0); /* Escurece no hover */
+    transform: scale(1.35);
     box-shadow: 0 5px 10px rgba(0,0,0,0.15);
 }
 
-#send-button:active {
+#send-button:active { /* Efeito ao clicar */
     transform: scale(0.98);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-
-
-/* Indicador de Digitando */
-.typing-indicator {
-    display: flex;
-    align-items: center;
-    padding: 10px 0px; /* Ajuste vertical */
-}
-
-.typing-indicator span {
-    height: 8px;
-    width: 8px;
-    margin: 0 2px;
-    background-color: #b0b8cc;
-    border-radius: 50%;
-    display: inline-block;
-    animation: bounce 1.4s infinite ease-in-out both;
-}
-
-.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1.0); }
-}
-
 
 /* Animação de Fade In para as mensagens */
 @keyframes fadeInUp {
@@ -383,11 +352,11 @@ body {
   }
 }
 
-/* Responsividade */
+/* Responsividade para telas menores */
 @media (max-width: 600px) {
     body {
         padding: 0;
-        align-items: flex-start;
+        align-items: flex-start; /* Alinha container no topo */
     }
     .chat-container {
         max-width: 100%;
@@ -397,10 +366,10 @@ body {
         box-shadow: none;
     }
     .chat-header, .input-area {
-        border-radius: 0;
+        border-radius: 0; /* Remove bordas arredondadas */
     }
      .chat-box {
-        padding: 15px; /* Menos padding em telas menores */
+        padding: 15px; /* Menos espaçamento */
     }
      .message-content {
         max-width: 85%; /* Permite bolhas um pouco mais largas */

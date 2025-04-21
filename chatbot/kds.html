@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Cozinha/Admin</title>
+    <link rel="stylesheet" href="kds.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body>
+    <header class="kds-header">
+        <div class="header-title">
+             <h1><i class="fas fa-utensils"></i> Painel Cozinha / Admin</h1>
+        </div>
+        <nav class="header-nav">
+            <button id="tab-kds" class="nav-tab active" data-target="kds-view">
+                <i class="fas fa-clipboard-list"></i> Pedidos Pendentes
+            </button>
+            <button id="tab-admin" class="nav-tab" data-target="admin-view">
+                <i class="fas fa-edit"></i> Gerenciar Cardápio
+            </button>
+        </nav>
+        <div id="sound-control">
+             <button id="toggle-sound" title="Ativar/Desativar Som"><i class="fas fa-volume-high"></i></button>
+        </div>
+    </header>
+
+    <!-- Visão KDS (Pedidos) -->
+    <main id="kds-view" class="main-view active-view kds-main">
+        <div id="order-list" class="order-list-container">
+            <!-- Os cards de pedido serão inseridos aqui -->
+             <div id="no-orders-message" class="no-orders">Nenhum pedido pendente no momento.</div>
+        </div>
+    </main>
+
+    <!-- Visão Admin (Gerenciar Cardápio) -->
+    <main id="admin-view" class="main-view admin-main" style="display: none;">
+        <section class="form-section card">
+            <h2><i class="fas fa-plus-circle"></i> Adicionar / Editar Item do Cardápio</h2>
+            <form id="menu-item-form">
+                <input type="hidden" id="edit-item-id">
+                <div class="admin-form-group">
+                    <label for="item-name">Nome do Item:</label>
+                    <input type="text" id="item-name" required placeholder="Ex: Suco de Laranja">
+                </div>
+                <div class="admin-form-group">
+                    <label for="item-price">Preço (R$):</label>
+                    <input type="number" id="item-price" step="0.01" min="0" required placeholder="Ex: 8.50">
+                </div>
+                <div class="admin-form-actions">
+                    <button type="submit" id="save-button" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Adicionar Item
+                    </button>
+                    <button type="button" id="cancel-edit-button" class="btn btn-secondary" style="display: none;">
+                        <i class="fas fa-times"></i> Cancelar Edição
+                    </button>
+                </div>
+                 <p id="form-message" class="admin-form-message"></p>
+            </form>
+        </section>
+
+        <section class="list-section card">
+            <h2><i class="fas fa-list-alt"></i> Cardápio Atual</h2>
+            <div id="menu-table-container">
+                <table id="menu-table">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Preço (R$)</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menu-table-body">
+                        <!-- Linhas do cardápio serão inseridas aqui -->
+                         <tr id="no-menu-items-row" style="display: none;">
+                            <td colspan="3" class="no-items-message">Nenhum item cadastrado no cardápio.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Áudio de notificação (continua o mesmo) -->
+    <audio id="notification-sound" src="notification.mp3" preload="auto"></audio>
+
+    <script src="kds.js"></script>
+</body>
+</html>

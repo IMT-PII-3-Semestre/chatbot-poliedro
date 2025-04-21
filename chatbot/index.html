@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Restaurante Poliedro</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Link para biblioteca de ícones Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+             <div class="header-content">
+                <!-- Ícone do Chatbot -->
+                <i class="fas fa-robot"></i>
+                <div class="header-text">
+                    <h2>Restaurante Poliedro</h2>
+                    <p>Assistente de Pedidos</p>
+                </div>
+            </div>
+        </div>
+        <div class="chat-box" id="chat-box">
+            <!-- As mensagens do chat serão inseridas aqui via JavaScript -->
+            <!-- O indicador de 'digitando' também será inserido aqui via JavaScript -->
+        </div>
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Digite sua mensagem..." autocomplete="off">
+            <button id="send-button" aria-label="Enviar Mensagem">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Link para o arquivo JavaScript principal -->
+    <script src="script.js"></script>
+</body>
+</html>

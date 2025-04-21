@@ -1,0 +1,473 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    line-height: 1.6;
+}
+
+.kds-header {
+    background-color: #34495e;
+    color: #ffffff;
+    padding: 10px 30px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Permite quebrar linha em telas menores */
+    gap: 10px;
+}
+
+.header-title h1 { /* Seleciona h1 dentro da div de título */
+    font-size: 1.5em;
+    font-weight: 500;
+    margin: 0; /* Remove margem padrão */
+    display: flex;
+    align-items: center;
+}
+.header-title h1 i {
+    margin-right: 10px;
+}
+
+/* Estilos da Navegação por Abas */
+.header-nav {
+    display: flex;
+    gap: 5px; /* Espaço entre as abas */
+    background-color: rgba(255, 255, 255, 0.1); /* Fundo levemente transparente */
+    border-radius: 6px;
+    padding: 5px;
+}
+
+.nav-tab {
+    background: none;
+    border: none;
+    color: #e0e0e0;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.nav-tab:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+.nav-tab.active {
+    background-color: #ffffff;
+    color: #34495e; /* Cor escura para o texto da aba ativa */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.nav-tab i {
+    font-size: 1.1em;
+}
+
+#sound-control button {
+    background: none;
+    border: 1px solid white;
+    color: white;
+    padding: 8px 10px;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#sound-control button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+#sound-control button i.fa-volume-mute {
+    color: #aaa; /* Cor do ícone de mudo */
+}
+
+/* Troca de Visão Principal */
+.main-view {
+    display: none; /* Esconde todas as visões por padrão */
+    padding: 20px;
+}
+.main-view.active-view {
+    display: block; /* Mostra a visão ativa */
+}
+
+/* Estilos Específicos do KDS */
+.order-list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Grid responsivo */
+    gap: 20px;
+}
+
+.order-card {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px 20px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    position: relative; /* Necessário para posicionar o timestamp */
+    overflow: hidden; /* Necessário para algumas animações */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-left: 5px solid #5C67E0; /* Borda colorida indicando pendente */
+}
+/* Animação para novos pedidos */
+.order-card.new {
+    animation: newOrderHighlight 1.5s ease-out;
+    border-left-color: #f39c12; /* Laranja para destaque de novo pedido */
+}
+@keyframes newOrderHighlight {
+  0% { background-color: #fdf5e6; transform: scale(1.02); } /* Cor de fundo suave + leve zoom */
+  70% { background-color: #fdf5e6; transform: scale(1.02); }
+  100% { background-color: #ffffff; transform: scale(1); }
+}
+
+.order-card h2 {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: #34495e;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #eee;
+    padding-bottom: 8px;
+}
+
+.order-card h2 .order-id {
+    color: #e74c3c; /* Destaca o ID do pedido */
+    font-weight: bold;
+}
+
+.order-card .items-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 15px;
+    flex-grow: 1; /* Empurra o botão 'Concluir' para baixo */
+}
+
+.order-card .items-list li {
+    margin-bottom: 5px;
+    font-size: 1em;
+    padding-left: 1.2em;
+    position: relative;
+}
+/* Ícone simples antes do item do pedido */
+.order-card .items-list li::before {
+    content: "\f0f5"; /* Ícone de talher/prato (utensils) do Font Awesome */
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    position: absolute;
+    left: 0;
+    color: #5C67E0;
+}
+
+.order-card .timestamp {
+    font-size: 0.8em;
+    color: #777;
+    text-align: right;
+    margin-top: 10px;
+    position: absolute; /* Posiciona no canto inferior direito */
+    bottom: 15px;
+    right: 20px;
+    font-style: italic;
+}
+
+.order-card .complete-button {
+    background-color: #2ecc71; /* Verde para concluir */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    width: 100%;
+    margin-top: 15px;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* Espaço entre texto e ícone */
+}
+
+.order-card .complete-button:hover {
+    background-color: #27ae60; /* Verde mais escuro no hover */
+}
+
+.order-card .complete-button i {
+     font-size: 0.9em;
+}
+
+.no-orders {
+    text-align: center;
+    font-size: 1.2em;
+    color: #777;
+    padding: 40px;
+    grid-column: 1 / -1; /* Ocupa todas as colunas do grid quando visível */
+}
+
+/* Estilos Específicos da Visão Admin */
+.admin-main {
+    display: grid; /* Usa grid para layout */
+    grid-template-columns: 1fr; /* Padrão para uma coluna */
+    gap: 25px;
+}
+
+/* Estilos do Formulário de Adição de Itens */
+.card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.form-section h2, .list-section h2 {
+    font-size: 1.4em;
+    color: #34495e;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.admin-form-group {
+    margin-bottom: 18px;
+}
+
+.admin-form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #555;
+}
+
+.admin-form-group input[type="text"],
+.admin-form-group input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+    transition: border-color 0.2s;
+}
+.admin-form-group input[type="text"]:focus,
+.admin-form-group input[type="number"]:focus {
+    border-color: #5C67E0;
+    outline: none;
+}
+
+.admin-form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Estilos Gerais de Botão */
+.btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-weight: 500;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.btn i {
+    font-size: 1.1em;
+}
+
+.btn-primary {
+    background-color: #5C67E0;
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #4a56c0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-secondary {
+    background-color: #7f8c8d;
+    color: white;
+}
+.btn-secondary:hover {
+    background-color: #6c7a7b;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+.btn-danger:hover {
+    background-color: #c0392b;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-warning {
+    background-color: #f39c12;
+    color: white;
+}
+.btn-warning:hover {
+    background-color: #e67e22;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.admin-form-message {
+    margin-top: 15px;
+    font-size: 0.9em;
+    padding: 8px;
+    border-radius: 4px;
+    display: none; /* Escondido por padrão */
+}
+.admin-form-message.success {
+    background-color: #e8f5e9; /* Verde claro */
+    color: #2e7d32; /* Verde escuro */
+    border: 1px solid #a5d6a7;
+    display: block;
+}
+.admin-form-message.error {
+    background-color: #ffebee; /* Vermelho claro */
+    color: #c62828; /* Vermelho escuro */
+    border: 1px solid #ef9a9a;
+    display: block;
+}
+
+/* Estilos da Tabela do Cardápio */
+#menu-table-container {
+    overflow-x: auto; /* Permite rolagem horizontal se necessário */
+}
+
+#menu-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+#menu-table th, #menu-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+#menu-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #444;
+}
+
+#menu-table tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+#menu-table td:last-child { /* Coluna de Ações */
+    text-align: right;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.action-buttons .btn {
+    padding: 5px 10px; /* Botões menores para ações */
+    font-size: 0.85em;
+}
+.action-buttons .btn i {
+    font-size: 1em; /* Ajusta tamanho do ícone se necessário */
+    margin-right: 4px; /* Espaço entre ícone e texto (se houver) */
+}
+
+.no-items-message {
+    text-align: center;
+    color: #777;
+    font-style: italic;
+    padding: 20px;
+}
+
+/* Responsividade */
+@media (min-width: 768px) {
+    .admin-main {
+        grid-template-columns: 350px 1fr; /* Formulário à esquerda, tabela à direita */
+    }
+}
+
+@media (max-width: 600px) {
+    .kds-header {
+        padding: 10px 15px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .header-title h1 {
+        font-size: 1.3em;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+    .header-nav {
+        justify-content: center;
+        width: 100%;
+    }
+    #sound-control {
+        position: absolute; /* Posiciona botão de som no canto superior direito */
+        top: 15px;
+        right: 15px;
+    }
+
+    .main-view {
+        padding: 15px;
+    }
+    .card {
+        padding: 15px;
+    }
+    .form-section h2, .list-section h2 {
+        font-size: 1.2em;
+    }
+
+    .order-list-container {
+        grid-template-columns: 1fr; /* Uma coluna em telas pequenas */
+    }
+    .order-card {
+        padding: 12px 15px;
+    }
+    .order-card h2 {
+        font-size: 1.1em;
+    }
+     .order-card .items-list li {
+        font-size: 0.95em;
+    }
+    .order-card .complete-button {
+        font-size: 0.95em;
+        padding: 8px 12px;
+    }
+
+    .admin-main {
+        grid-template-columns: 1fr; /* Empilha formulário e tabela */
+    }
+    .btn {
+        padding: 8px 15px;
+        font-size: 0.9em;
+    }
+    #menu-table th, #menu-table td {
+        padding: 10px 8px;
+        font-size: 0.9em;
+    }
+    .action-buttons .btn {
+        padding: 4px 8px;
+    }
+}

@@ -106,11 +106,12 @@ Este projeto utiliza uma combinação de tecnologias para o frontend, backend e 
 Este projeto foi conduzido por uma equipe de alunos do curso de Ciências da Computação do Instituto Mauá de Tecnologia, utilizando o framework ágil **SCRUM**. A estrutura da equipe foi organizada da seguinte forma:
 
 -   **Product Owner (PO)**: Thiago
--   **Scrum Master**: Arthur Trindade
+-   **Scrum Master**: Henrique Impastaro
 -   **Desenvolvedores**:
+    -   Arthur Trindade
     -   Murilo Rodrigues
     -   Pedro Henrique
-    -   Henrique Impastaro
+
 
 ---
 

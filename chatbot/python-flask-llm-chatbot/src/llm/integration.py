@@ -2,29 +2,31 @@ import requests
 import json
 import logging
 import os
-from decimal import Decimal, InvalidOperation  # Importar Decimal
+from decimal import Decimal, InvalidOperation
 
 logging.basicConfig(level=logging.INFO)
 
 class LLMIntegration:
-    def __init__(self, ollama_url="http://localhost:11434/api/generate", model_name="mistral"):  # Default para mistral
+    def __init__(self, ollama_url, model_name, timeout=60, temperature=0.5):
         self.ollama_url = ollama_url
         self.model_name = model_name
-        logging.info(f"LLMIntegration inicializado para o modelo '{self.model_name}' em {self.ollama_url}")
-        # O contexto base será construído a cada chamada para garantir que o menu esteja atualizado
+        self.timeout = timeout  # Armazene o timeout
+        self.temperature = temperature  # Armazene a temperatura
+        logging.info(f"LLMIntegration inicializado para o modelo '{self.model_name}' em {self.ollama_url} com timeout={self.timeout}, temp={self.temperature}")
 
     def _load_menu_from_json(self):
         """Carrega o cardápio do arquivo menu.json.
 
         Returns:
-            str: String formatada do cardápio ou mensagem de erro.
+            str: String formatada do cardápio em caso de sucesso.
+            None: Em caso de erro ao carregar ou parsear o arquivo, ou se o menu estiver vazio/inválido.
         """
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        menu_path = os.path.join(current_dir, '..', 'menu.json')  # Caminho relativo para src/menu.json
+        menu_path = os.path.join(current_dir, '..', 'menu.json')
 
         if not os.path.exists(menu_path):
             logging.error(f"Arquivo menu.json não encontrado em {menu_path}")
-            return "Cardápio indisponível no momento (arquivo não encontrado)."
+            return None  # Retorna None se o arquivo não existe
 
         try:
             with open(menu_path, 'r', encoding='utf-8') as f:
@@ -32,15 +34,17 @@ class LLMIntegration:
 
             if not isinstance(menu_data, list):
                 logging.error(f"Formato inválido no menu.json: esperado uma lista, encontrado {type(menu_data)}.")
-                return "Erro ao carregar o cardápio (formato inválido)."
+                return None  # Retorna None se o formato não for lista
 
             menu_items_formatted = []
             for item in menu_data:
                 if isinstance(item, dict) and 'name' in item and 'price' in item:
                     try:
-                        # Formata o preço usando Decimal para garantir precisão
                         price = Decimal(str(item['price']))
-                        menu_items_formatted.append(f"- {item['name']} (R$ {price:.2f})")
+                        if price >= 0:  # Garante que o preço não seja negativo
+                            menu_items_formatted.append(f"- {item['name']} (R$ {price:.2f})")
+                        else:
+                            logging.warning(f"Ignorando item com preço negativo no menu: {item}")
                     except (InvalidOperation, ValueError, TypeError):
                         logging.warning(f"Ignorando item com preço inválido no menu: {item}")
                 else:
@@ -48,28 +52,36 @@ class LLMIntegration:
 
             if not menu_items_formatted:
                 logging.warning("Nenhum item válido encontrado no cardápio após o parse.")
-                return "Cardápio vazio ou com itens inválidos."
+                return None  # Retorna None se nenhum item válido foi encontrado
 
-            return "\n".join(menu_items_formatted)
+            return "\n".join(menu_items_formatted)  # Retorna a string formatada apenas em caso de sucesso
 
         except json.JSONDecodeError:
             logging.exception(f"Erro ao decodificar o arquivo menu.json em {menu_path}")
-            return "Erro ao carregar o cardápio (JSON inválido)."
+            return None  # Retorna None em caso de erro de JSON
         except Exception as e:
             logging.exception(f"Erro inesperado ao carregar menu.json: {e}")
-            return "Erro interno ao carregar o cardápio."
+            return None  # Retorna None para qualquer outra exceção
 
     def _build_base_context(self):
-        """Constrói o prompt base com instruções, menu atualizado e exemplos."""
+        """Constrói o prompt base com instruções, menu atualizado e exemplos,
+           ou um prompt de erro se o menu não puder ser carregado."""
         menu_string = self._load_menu_from_json()
 
-        # Contexto simplificado se o menu falhar ao carregar
-        if "indisponível" in menu_string or "Erro" in menu_string or "vazio" in menu_string:
-            logging.warning(f"Construindo contexto base SEM cardápio devido a erro: {menu_string}")
-            return f"""You are a virtual assistant for Poliedro Restaurant. Your final response MUST be in Brazilian Portuguese.
-The menu is currently unavailable or empty. Inform the user politely. Example: "Desculpe, o cardápio está indisponível ou vazio no momento." """
+        # Verifica se o carregamento do menu falhou
+        if menu_string is None:
+            logging.error("Falha ao carregar o menu. Construindo prompt de erro para o LLM.")
+            # Prompt mínimo informando o LLM sobre o problema
+            instructions = """You are a virtual assistant for the Poliedro Restaurant.
+ATTENTION: The menu could not be loaded due to an internal error.
+Your task is to politely inform the user that the menu is currently unavailable and you cannot take orders at this moment.
+Respond ONLY in Brazilian Portuguese. Example: "Desculpe, o cardápio está indisponível no momento e não consigo anotar pedidos. Por favor, tente novamente mais tarde."
+Do NOT ask what the user wants. Do NOT mention the error details.
+Assistente:"""  # Adiciona o início da resposta esperada
+            return instructions
 
-        # Instruções detalhadas com o menu carregado
+        # Se menu_string não for None, o menu foi carregado com sucesso. Construir prompt completo:
+        logging.info("Menu carregado com sucesso. Construindo prompt completo para o LLM.")
         instructions = f"""You are a friendly and efficient virtual assistant for the Poliedro Restaurant. Your goal is to take customer orders based on the available menu. Be clear, direct, and polite. Your final response MUST be in Brazilian Portuguese. Only generate the response for the 'Assistente:'. Do NOT reproduce the examples below.
 
 **Current Menu (Cardápio Atual):**
@@ -77,7 +89,7 @@ The menu is currently unavailable or empty. Inform the user politely. Example: "
 
 **Additional Instructions:**
 - Respond naturally and grammatically correct in Brazilian Portuguese.
-- When the customer adds items, confirm by repeating the items and asking if it's correct ("Correto?"). Use the format "Nx Item Name" if quantity is known or implied, otherwise just "Item Name". Example: "Entendido. 1x Hambúrguer Clássico e 1x Batata Frita (Média). Correto?"
+- When the customer adds items, confirm by repeating the items as a bulleted list and asking if it's correct ("Correto?"). Use the format "Nx Item Name" for each item in the list. Start the confirmation with "Entendido. Você pediu:" followed by the list on new lines.
 - If the customer asks for something not on the menu, politely inform them that the item is not available today ("não está disponível hoje").
 - If the menu is unavailable (indicated by "Cardápio indisponível", "Erro ao carregar", etc.), state that clearly and do not ask what the user wants to order.
 - Do not chat about other topics. Focus only on taking the order or providing information about the menu.
@@ -99,22 +111,22 @@ Cliente: tem pizza?
 Assistente: Desculpe, não temos pizza em nosso cardápio hoje. Gostaria de pedir algum dos itens disponíveis?
 
 Cliente: quero um hamburguer e uma batata frita
-Assistente: Entendido. 1x Hambúrguer Clássico e 1x Batata Frita (Média). Correto?
+Assistente: Entendido. Você pediu:
+- 1x Hambúrguer Clássico
+- 1x Batata Frita (Média)
+Correto?
 
 Cliente: sim
 Assistente: Ótimo! Pedido anotado: 1x Hambúrguer Clássico, 1x Batata Frita (Média). Total: R$ 23.50. Seu pedido foi enviado para a cozinha!
 
-Cliente: quero um refri
-Assistente: Entendido. 1x Refrigerante Lata. Correto?
+Cliente: quero um refri e dois teste 3
+Assistente: Entendido. Você pediu:
+- 1x Refrigerante Lata
+- 2x teste 3
+Correto?
 
 Cliente: sim, só isso
-Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata. Total: R$ 5.00. Seu pedido foi enviado para a cozinha!
-
-Cliente: um hamburguer e um teste 2
-Assistente: Entendido. 1x Hambúrguer Clássico e 1x teste 2. Correto?
-
-Cliente: correto
-Assistente: Ótimo! Pedido anotado: 1x Hambúrguer Clássico, 1x teste 2. Total: R$ 17.50. Seu pedido foi enviado para a cozinha!
+Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 11.00. Seu pedido foi enviado para a cozinha!
 
 --- END OF EXAMPLES ---
 """
@@ -124,28 +136,26 @@ Assistente: Ótimo! Pedido anotado: 1x Hambúrguer Clássico, 1x teste 2. Total:
         """
         Gera uma resposta da API Ollama, construindo o contexto atualizado a cada chamada.
         """
-        # Constrói o contexto base atualizado (com menu) a cada chamada
         current_base_context = self._build_base_context()
 
         # Adiciona a entrada atual do usuário ao prompt
         # Nota: conversation_history não está sendo usado atualmente, mas poderia ser adicionado aqui.
         full_prompt = f"{current_base_context}\n\nCliente: {user_input}\nAssistente:"
-        logging.info(f"Enviando prompt para Ollama (modelo: {self.model_name}, início):\n{full_prompt[:500]}...")  # Log truncado
+        logging.info(f"Enviando prompt para Ollama (modelo: {self.model_name}, início):\n{full_prompt[:500]}...")
 
         payload = {
             "model": self.model_name,
             "prompt": full_prompt,
             "stream": False,
             "options": {
-                "temperature": 0.5,  # Temperatura baixa para respostas mais consistentes
-                "stop": ["Cliente:", "\nCliente:", "\n\nCliente:"]  # Evita que o modelo gere a próxima fala do cliente
+                "temperature": self.temperature,  # Use os valores armazenados no self
+                "stop": ["Cliente:", "\nCliente:", "\n\nCliente:"]
             }
         }
         headers = {'Content-Type': 'application/json'}
 
         try:
-            # Timeout aumentado para permitir processamento mais longo do LLM
-            response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=180)
+            response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout)  # Use o timeout armazenado no self
             response.raise_for_status()  # Lança exceção para erros HTTP (4xx ou 5xx)
             response_data = response.json()
 
@@ -158,7 +168,7 @@ Assistente: Ótimo! Pedido anotado: 1x Hambúrguer Clássico, 1x teste 2. Total:
             logging.info(f"Resposta recebida do Ollama: '{generated_text}'")
             return generated_text
         except requests.exceptions.Timeout:
-            logging.error(f"Timeout ao chamar a API Ollama em {self.ollama_url}")
+            logging.error(f"Timeout ({self.timeout}s) ao chamar a API Ollama em {self.ollama_url}")
             return "Desculpe, o serviço demorou muito para responder. Tente novamente."
         except requests.exceptions.RequestException as e:
             logging.exception(f"Erro de rede ou HTTP ao chamar a API Ollama: {e}")

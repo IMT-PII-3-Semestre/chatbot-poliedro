@@ -134,33 +134,47 @@ Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 
 
     def generate_response(self, user_input, conversation_history=None):
         """
-        Gera uma resposta da API Ollama, construindo o contexto atualizado a cada chamada.
+        Gera uma resposta da API Ollama, incluindo o histórico da conversa no prompt.
         """
         current_base_context = self._build_base_context()
 
-        # Adiciona a entrada atual do usuário ao prompt
-        # Nota: conversation_history não está sendo usado atualmente, mas poderia ser adicionado aqui.
-        full_prompt = f"{current_base_context}\n\nCliente: {user_input}\nAssistente:"
-        logging.info(f"Enviando prompt para Ollama (modelo: {self.model_name}, início):\n{full_prompt[:500]}...")
+        # --- Construção do Histórico para o Prompt ---
+        history_prompt_part = ""
+        if conversation_history:
+            # Formata o histórico como uma sequência de Cliente/Assistente
+            history_lines = []
+            for entry in conversation_history:
+                sender_label = "Cliente" if entry.get("sender") == "user" else "Assistente"
+                history_lines.append(f"{sender_label}: {entry.get('message', '')}")
+            history_prompt_part = "\n".join(history_lines) + "\n\n"  # Adiciona nova linha dupla no final
+        # ---------------------------------------------
+
+        # Adiciona o histórico formatado e a entrada atual do usuário ao prompt
+        full_prompt = f"{current_base_context}\n\n{history_prompt_part}Cliente: {user_input}\nAssistente:"
+
+        # Log apenas o início e o fim do prompt para evitar logs muito longos
+        log_prompt_start = full_prompt[:300]
+        log_prompt_end = full_prompt[-200:]
+        logging.info(f"Enviando prompt para Ollama (modelo: {self.model_name}, início/fim):\n{log_prompt_start}...\n...\n{log_prompt_end}")
 
         payload = {
             "model": self.model_name,
             "prompt": full_prompt,
             "stream": False,
             "options": {
-                "temperature": self.temperature,  # Use os valores armazenados no self
+                "temperature": self.temperature,
                 "stop": ["Cliente:", "\nCliente:", "\n\nCliente:"]
             }
         }
         headers = {'Content-Type': 'application/json'}
 
         try:
-            response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout)  # Use o timeout armazenado no self
-            response.raise_for_status()  # Lança exceção para erros HTTP (4xx ou 5xx)
+            response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout)
+            response.raise_for_status()
             response_data = response.json()
 
-            # Limpa a resposta removendo potenciais tokens de parada no final
             generated_text = response_data.get('response', '').strip()
+            # Limpeza de tokens de parada (sem mudanças aqui)
             for stop_token in payload.get("options", {}).get("stop", []):
                 if generated_text.endswith(stop_token):
                     generated_text = generated_text[:-len(stop_token)].strip()
@@ -174,8 +188,8 @@ Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 
             logging.exception(f"Erro de rede ou HTTP ao chamar a API Ollama: {e}")
             return "Desculpe, não consegui me conectar ao serviço de chat no momento."
         except json.JSONDecodeError:
-            logging.exception(f"Erro ao decodificar a resposta JSON do Ollama: {response.text}")
-            return "Desculpe, recebi uma resposta inválida do serviço de chat."
+            logging.exception(f"Erro ao decodificar resposta JSON da API Ollama.")
+            return "Desculpe, recebi uma resposta inesperada do serviço de chat."
         except Exception as e:
-            logging.exception("Ocorreu um erro inesperado na integração com o LLM.")
-            return "Desculpe, ocorreu um erro inesperado."
+            logging.exception(f"Erro inesperado em generate_response: {e}")
+            return "Desculpe, ocorreu um erro interno inesperado."

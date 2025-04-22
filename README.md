@@ -1,12 +1,12 @@
 # 🤖 Chatbot Poliedro
 
-Bem-vindo ao repositório do **Chatbot Poliedro**, um projeto interdisciplinar desenvolvido por alunos do 3 curso de Ciências da Computação do Instituto Mauá de Tecnologia. Este sistema visa otimizar o atendimento nos restaurantes das escolas Poliedro, reduzindo filas e aprimorando a comunicação entre clientes e cozinha.
+Bem-vindo ao repositório do **Chatbot Poliedro**, um projeto interdisciplinar desenvolvido por alunos do 3º semestre do curso de Ciências da Computação do Instituto Mauá de Tecnologia. Este sistema visa otimizar o atendimento nos restaurantes das escolas Poliedro, reduzindo filas e aprimorando a comunicação entre clientes e cozinha.
 
 ---
 
 ## 📖 Descrição do Projeto
 
-O **Chatbot Poliedro** é um sistema de atendimento automatizado que utiliza inteligência artificial para receber e gerenciar pedidos de forma eficiente. Foi concebido para mitigar problemas de longas filas e atrasos no atendimento, particularmente durante períodos de alta demanda.
+O **Chatbot Poliedro** é um sistema de atendimento automatizado que utiliza inteligência artificial para receber e gerenciar pedidos de forma eficiente. Foi desenvolvido para tratar problemas de longas filas e atrasos no atendimento, particularmente durante períodos de alta demanda.
 
 ### 🎯 Objetivos do Sistema
 
@@ -60,7 +60,7 @@ Este projeto utiliza uma combinação de tecnologias para o frontend, backend e 
 
 1.  **Clone o repositório:**
     ```bash
-    git clone <INSERIR URL>
+    git clone <https://github.com/IMT-PII-3-Semestre/chatbot-poliedro>
     cd chatbot-poliedro
     ```
 

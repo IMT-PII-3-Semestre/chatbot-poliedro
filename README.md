@@ -7,6 +7,7 @@ Bem-vindo ao repositório do **Chatbot Poliedro**, um projeto interdisciplinar d
 ## Descrição do Projeto
 
 O **Chatbot Poliedro** é um sistema de atendimento automatizado que utiliza inteligência artificial para receber e gerenciar pedidos de forma eficiente. Foi desenvolvido para tratar problemas de longas filas e atrasos no atendimento, particularmente durante períodos de alta demanda.
+Para complementar, um sistema KDS (Kitchen Display System) foi integrado para que a cozinha visualize e gerencie os pedidos recebidos em tempo real.
 
 ### Objetivos do Sistema
 

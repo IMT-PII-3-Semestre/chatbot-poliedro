@@ -5,38 +5,54 @@ import re
 from decimal import Decimal, InvalidOperation
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
+from dotenv import load_dotenv  # Importar load_dotenv
+
 # Ajustar imports se a estrutura de diretórios mudar
 from chatbot.handler import ChatbotHandler
 from llm.integration import LLMIntegration
+
+# --- Carregar Variáveis de Ambiente ---
+load_dotenv()  # Carrega variáveis do arquivo .env na raiz do projeto
 
 # --- Configuração do Logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Configuração da Aplicação Flask ---
 app = Flask(__name__)
-# Chave secreta para sessões Flask (necessária para session funcionar)
-# Trocar por uma chave segura em produção! Usar variável de ambiente é recomendado.
+# Use os.getenv para a chave secreta, com um padrão menos seguro para dev
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "chave-secreta-padrao-desenvolvimento")
-# Habilita CORS para permitir requisições do frontend, suportando credenciais (cookies de sessão)
+# Configurar modo debug a partir de variável de ambiente
+app.debug = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
 CORS(app, supports_credentials=True)
 
-# --- Constantes e Configuração ---
+# --- Constantes e Configuração (Lidas do .env ou com padrões) ---
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mistral")
-# Caminho absoluto para o arquivo de cardápio relativo a este arquivo app.py
+OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", 60))  # Converter para int
+OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", 0.5))  # Converter para float
+
 MENU_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'menu.json')
-# Palavras/frases que indicam confirmação do usuário
-CONFIRMATION_WORDS = {"sim", "correto", "só isso", "pode confirmar", "confirmo", "isso mesmo"}
+
+# Ler palavras de confirmação do .env, dividir por vírgula e criar um set
+confirmation_words_str = os.getenv("CONFIRMATION_WORDS", "sim,correto,só isso,pode confirmar,confirmo,isso mesmo")
+CONFIRMATION_WORDS = set(word.strip().lower() for word in confirmation_words_str.split(',') if word.strip())
 
 # --- Inicialização dos Componentes ---
 try:
-    llm_integration = LLMIntegration(ollama_url=OLLAMA_URL, model_name=OLLAMA_MODEL)
+    # Passe as configurações lidas para LLMIntegration
+    llm_integration = LLMIntegration(
+        ollama_url=OLLAMA_URL,
+        model_name=OLLAMA_MODEL,
+        timeout=OLLAMA_TIMEOUT,
+        temperature=OLLAMA_TEMPERATURE
+    )
     chatbot_handler = ChatbotHandler(llm_integration=llm_integration)
     logging.info(f"Integração LLM inicializada com sucesso para o modelo '{OLLAMA_MODEL}'.")
 except Exception as e:
-    logging.exception("Falha crítica ao inicializar a integração LLM ou ChatbotHandler.")
-    # Em um cenário real, poderia notificar administradores ou tentar novamente.
-    # exit(1) # Descomentar se a falha for considerada fatal para a aplicação.
+    logging.exception("Erro fatal durante a inicialização dos componentes.")
+    # Considerar sair da aplicação ou lidar com o erro de forma mais robusta
+    llm_integration = None
+    chatbot_handler = None
 
 # --- Função Auxiliar: Carregar Cardápio ---
 def load_menu_data():
@@ -84,6 +100,9 @@ def load_menu_data():
 @app.route('/chat', methods=['POST'])
 def chat():
     """Processa a mensagem do usuário, interage com o LLM ou finaliza o pedido."""
+    if not chatbot_handler:
+         return jsonify({"error": "Chatbot não inicializado corretamente."}), 500
+
     data = request.json
     if not data or 'message' not in data:
         logging.warning("Requisição para /chat sem 'message' no corpo JSON.")
@@ -173,7 +192,7 @@ def chat():
                         total_str = f"{total_price:.2f}".replace('.', ',')
                         final_response_data["response"] = f"Ótimo! Pedido anotado: {items_final_string}. Total: R$ {total_str}. Seu pedido foi enviado para a cozinha!"
                         logging.info(f"Pedido finalizado pelo backend: {final_response_data['response']}")
-                        # Aqui você poderia adicionar a lógica para realmente enviar para a cozinha/KDS
+                        # Aqui podemos adicionar a lógica para realmente enviar para a cozinha/KDS
                         # Ex: save_order_to_kds(parsed_items_details, total_price)
 
             else:
@@ -206,7 +225,7 @@ def chat():
     logging.info(f"Sessão - Armazenando resposta final: '{final_response_data['response']}'")
 
     # Retorna a resposta final para o frontend
-    return jsonify(final_response_data) # Envia o dicionário inteiro
+    return jsonify(final_response_data)
 
 # --- Endpoint: Gerenciar Cardápio ---
 @app.route('/menu', methods=['GET', 'POST'])
@@ -268,6 +287,5 @@ def handle_menu():
 # --- Execução da Aplicação ---
 if __name__ == '__main__':
     logging.info("Iniciando servidor Flask...")
-    # Executa em 0.0.0.0 para ser acessível na rede local/externa
-    # debug=True habilita recarregamento automático e debugger (NÃO USAR EM PRODUÇÃO)
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # O modo debug é controlado pela variável de ambiente agora
+    app.run(host='0.0.0.0', port=5000)

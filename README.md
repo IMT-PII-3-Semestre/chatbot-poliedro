@@ -109,6 +109,7 @@ Este projeto foi conduzido por uma equipe de alunos do curso de Ciências da Com
 -   **Scrum Master**: Henrique Impastaro
 -   **Desenvolvedores**:
     -   Arthur Trindade
+    -   Henrique Impastaro
     -   Murilo Rodrigues
     -   Pedro Henrique
 

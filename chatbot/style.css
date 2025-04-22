@@ -331,7 +331,7 @@ body {
 
 #send-button:hover {
     background: linear-gradient(135deg, #5c67e0, #4a56c0); /* Escurece no hover */
-    transform: scale(1.35);
+    transform: scale(1.35); /* Aumenta no hover */
     box-shadow: 0 5px 10px rgba(0,0,0,0.15);
 }
 

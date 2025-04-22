@@ -12,3 +12,6 @@ __pycache__/
 # OS-specific
 .DS_Store
 Thumbs.db
+
+# Variáveis de ambiente
+#.env

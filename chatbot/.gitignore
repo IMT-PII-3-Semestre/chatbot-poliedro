@@ -14,4 +14,4 @@ __pycache__/
 Thumbs.db
 
 # Variáveis de ambiente
-#.env
+.env

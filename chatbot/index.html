@@ -10,24 +10,26 @@
 </head>
 <body>
     <div class="chat-container">
+        <!-- Updated Header Structure -->
         <div class="chat-header">
-             <div class="header-content">
-                <!-- Ícone do Chatbot -->
-                <i class="fas fa-robot"></i>
-                <div class="header-text">
-                    <h2>Chatbot Poliedro</h2>
-                    <p>Assistente de Pedidos do Restaurante</p>
-                </div>
+            <div class="header-content">
+                 <i class="fas fa-robot"></i> <!-- Robot Icon -->
+                 <div class="header-text">
+                     <h2>Chatbot Poliedro</h2>
+                     <p>Online</p> <!-- Optional status -->
+                 </div>
             </div>
+            <button id="reset-button" title="Iniciar Nova Conversa">Nova Conversa</button>
         </div>
+        <!-- Use ID "chat-box" as expected by CSS/JS -->
         <div class="chat-box" id="chat-box">
-            <!-- As mensagens do chat serão inseridas aqui via JavaScript -->
-            <!-- O indicador de 'digitando' também será inserido aqui via JavaScript -->
+            <!-- Chat messages will appear here -->
         </div>
+        <!-- Use class "input-area" as expected by CSS -->
         <div class="input-area">
-            <input type="text" id="user-input" placeholder="Digite sua mensagem..." autocomplete="off">
-            <button id="send-button" aria-label="Enviar Mensagem">
-                <i class="fas fa-paper-plane"></i>
+            <input type="text" id="user-input" placeholder="Digite sua mensagem...">
+            <button id="send-button">
+                 <i class="fas fa-paper-plane"></i> <!-- Send Icon -->
             </button>
         </div>
     </div>

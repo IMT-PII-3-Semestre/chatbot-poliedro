@@ -112,5 +112,3 @@ Este projeto foi desenvolvido como parte das atividades acadêmicas do **Institu
 | **Instituição de Ensino**                                    | **Instituição Parceira**                                      |
 | :----------------------------------------------------------: | :-----------------------------------------------------------------------: |
 | <img src="images/logo-IMT.png" width="150" alt="Logo IMT"> | <img src="images/logo-poliedro-se.png" width="150" alt="Logo Poliedro SE"> |
-
-

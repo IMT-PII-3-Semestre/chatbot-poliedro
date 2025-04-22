@@ -3,7 +3,7 @@ import json
 import logging
 import re
 from decimal import Decimal, InvalidOperation
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, Response, stream_with_context
 from flask_cors import CORS
 from dotenv import load_dotenv
 
@@ -38,7 +38,7 @@ confirmation_words_str = os.getenv("CONFIRMATION_WORDS", "sim,correto,só isso,p
 CONFIRMATION_WORDS = set(word.strip().lower() for word in confirmation_words_str.split(',') if word.strip())
 
 # --- Constantes ---
-MAX_HISTORY_MESSAGES = 6  # Keep last 6 messages (3 user, 3 bot turns)
+MAX_HISTORY_MESSAGES = 6  # Manter 6 ultimas mensagens (3 user, 3 bot)
 
 # --- Inicialização dos Componentes ---
 try:
@@ -120,136 +120,60 @@ def chat():
     logging.info(f"Mensagem recebida do usuário: '{user_input}'")
 
     # --- Gerenciamento do Histórico ---
-    # 1. Inicializa/Recupera o histórico da sessão
     if 'chat_history' not in session:
         session['chat_history'] = []
     conversation_history = session['chat_history']
     # ---------------------------------
 
-    # Verifica se é uma confirmação de pedido
-    user_input_cleaned = user_input.lower().strip().rstrip('.,!')
-    is_user_confirming = user_input_cleaned in CONFIRMATION_WORDS
-    last_bot_message = conversation_history[-1]['message'] if conversation_history and conversation_history[-1]['sender'] == 'bot' else ""
-    is_after_confirmation_prompt = "Correto?" in last_bot_message
+    # --- Processamento Normal (Streaming) ---
+    # 1. Adiciona a mensagem do usuário ao histórico ANTES de chamar o LLM
+    conversation_history.append({"sender": "user", "message": user_input})
+    # Aplica limite (mantém o histórico atualizado para o LLM)
+    session['chat_history'] = conversation_history[-MAX_HISTORY_MESSAGES:]
+    session.modified = True
 
-    logging.info(f"Input usuário: '{user_input}', Limpo: '{user_input_cleaned}', Confirmando: {is_user_confirming}")
-    logging.info(f"Sessão - Última msg bot terminou com 'Correto?': {is_after_confirmation_prompt}")
+    # 2. Chama o handler (que retorna um gerador)
+    # Passa a versão mais recente do histórico
+    token_generator = chatbot_handler.process_input(user_input, session['chat_history'])
 
-    final_response_data = {"response": None} # Usar um dict para facilitar adição de dados futuros
-
-    # --- LÓGICA DE FINALIZAÇÃO PELO BACKEND ---
-    if is_user_confirming and is_after_confirmation_prompt:
-        logging.info("Usuário confirmou pedido. Iniciando finalização pelo backend.")
+    # 3. Define uma função interna para gerar a resposta e atualizar o histórico completo
+    def generate_stream():
+        full_bot_response = []
         try:
-            match = re.search(r'Entendido\.\s*(.*?)\.\s*Correto\?', last_bot_message, re.IGNORECASE | re.DOTALL)
-            if match:
-                items_string = match.group(1).strip()
-                item_parts = re.split(r',\s*(?![^()]*\))|\s+e\s+(?![^()]*\))|\s*além\s+de\s+(?![^()]*\))', items_string)
-
-                parsed_items_details = []
-                total_price = Decimal('0.00')
-                menu = load_menu_data()
-                parse_errors = [] # Lista para guardar nomes de itens NÃO encontrados no menu
-
-                if not menu:
-                    logging.error("Finalização: Cardápio não pôde ser carregado para validação.")
-                    # Mensagem de erro mais específica se o menu não carregar
-                    final_response_data["response"] = "Desculpe, não consigo verificar seu pedido pois o cardápio está indisponível no momento. Tente novamente mais tarde."
+            for token in token_generator:
+                full_bot_response.append(token)
+                yield token # Envia o token para o cliente
+        finally:
+            # 4. Atualiza o histórico com a resposta COMPLETA do bot APÓS o stream terminar
+            if 'chat_history' in session: # Verifica se a sessão ainda existe
+                final_response_str = "".join(full_bot_response)
+                # Remove a mensagem do usuário que adicionamos temporariamente
+                # e adiciona a resposta real do bot
+                if session['chat_history'] and session['chat_history'][-1]['sender'] == 'user':
+                     # Adiciona a resposta completa do bot
+                     session['chat_history'].append({"sender": "bot", "message": final_response_str})
+                     # Reaplica o limite se necessário (embora já deva estar ok)
+                     session['chat_history'] = session['chat_history'][-MAX_HISTORY_MESSAGES:]
+                     session.modified = True
+                     logging.info("Histórico atualizado com resposta completa do bot após stream.")
                 else:
-                    for part in item_parts:
-                        part = part.strip()
-                        if not part: continue
-
-                        item_match = re.match(r'^(?:(\d+)\s*x\s+)?(.+)$', part, re.IGNORECASE)
-                        if item_match:
-                            quantity = int(item_match.group(1) or 1)
-                            name = item_match.group(2).strip()
-                            name_lower = name.lower()
-                            item_price = menu.get(name_lower)
-
-                            if item_price is None:
-                                name_base = re.sub(r'\s*\(.*\)$', '', name).strip()
-                                item_price = menu.get(name_base.lower())
-
-                            if item_price is not None:
-                                # Item válido, adiciona aos detalhes e soma preço
-                                parsed_items_details.append({"name": name, "quantity": quantity})
-                                total_price += item_price * quantity
-                            else:
-                                # Item inválido (não encontrado no menu)
-                                logging.warning(f"Finalização: Item inválido confirmado pelo usuário: '{name}' (não encontrado no menu)")
-                                parse_errors.append(name) # Adiciona nome do item inválido à lista de erros
-                                # Não adiciona aos parsed_items_details válidos
-                        else:
-                            logging.warning(f"Finalização: Não foi possível parsear estrutura do item confirmado: '{part}'")
-                            # Considera a parte inteira como erro se não conseguir parsear
-                            parse_errors.append(part)
-
-                    # --- VERIFICAÇÃO DE ERROS ANTES DE FINALIZAR ---
-                    if parse_errors:
-                        # Se houver itens inválidos, NÃO finaliza o pedido
-                        invalid_items_str = ", ".join(parse_errors)
-                        logging.error(f"Finalização BLOQUEADA. Itens inválidos detectados: {invalid_items_str}")
-                        final_response_data["response"] = f"Desculpe, não posso finalizar o pedido. Os seguintes itens não estão no cardápio ou não foram reconhecidos: {invalid_items_str}. Por favor, peça novamente apenas com itens válidos."
-                    elif not parsed_items_details:
-                         # Caso nenhum item tenha sido parseado com sucesso (mesmo sem erros explícitos de nome)
-                         logging.error(f"Finalização BLOQUEADA. Nenhum item válido foi extraído da confirmação: '{items_string}'")
-                         final_response_data["response"] = "Desculpe, não consegui entender os itens do seu pedido para finalizar. Poderia tentar novamente?"
-                    else:
-                        # Nenhum erro, todos os itens são válidos -> Finaliza o pedido
-                        items_final_string = ", ".join([f"{item['quantity']}x {item['name']}" for item in parsed_items_details])
-                        total_str = f"{total_price:.2f}".replace('.', ',')
-                        final_response_data["response"] = f"Ótimo! Pedido anotado: {items_final_string}. Total: R$ {total_str}. Seu pedido foi enviado para a cozinha!"
-                        logging.info(f"Pedido finalizado pelo backend: {final_response_data['response']}")
-                        # Aqui podemos adicionar a lógica para realmente enviar para a cozinha/KDS
-                        # Ex: save_order_to_kds(parsed_items_details, total_price)
-
-                        # --- Atualização do Histórico ---
-                        # Adiciona a mensagem do usuário e a resposta final do bot
-                        conversation_history.append({"sender": "user", "message": user_input})
-                        conversation_history.append({"sender": "bot", "message": final_response_data["response"]})
-                        # Aplica o limite de histórico
-                        session['chat_history'] = conversation_history[-MAX_HISTORY_MESSAGES:]
-                        session.modified = True # Garante que a sessão seja salva
-                        # ---------------------------------
-
+                     logging.warning("Não foi possível atualizar o histórico do bot após stream - último item não era do usuário.")
             else:
-                logging.warning(f"Finalização: Última mensagem do bot não correspondeu ao formato de confirmação esperado: '{last_bot_message}'")
-                # Mantém a resposta genérica, pois não sabemos o que confirmar
-                final_response_data["response"] = "Entendido. Seu pedido foi registrado. (Não foi possível extrair detalhes)"
+                logging.warning("Sessão não encontrada para atualizar histórico do bot após stream.")
 
-        except Exception as e:
-            logging.exception("Erro GERAL durante a finalização pelo backend.")
-            final_response_data["response"] = "Desculpe, ocorreu um erro interno ao tentar finalizar seu pedido."
+    # 5. Retorna a resposta em streaming
+    # text/event-stream é comum para Server-Sent Events, mas text/plain funciona para streaming simples
+    return Response(stream_with_context(generate_stream()), mimetype='text/plain')
+    # -----------------------------------------
 
-    # --- Se não for finalização pelo backend (ou se a finalização falhou e gerou uma resposta de erro) ---
-    if final_response_data["response"] is None:
-        logging.info("Condição de finalização backend não atendida ou falhou. Chamando LLM.")
-        try:
-            # Processa a entrada do usuário usando o handler do chatbot (que chama o LLM)
-            bot_response = chatbot_handler.process_input(user_input, conversation_history)
-            final_response_data["response"] = bot_response
-            logging.info(f"Resposta recebida do LLM: '{final_response_data['response']}'")
-
-            # --- Atualização do Histórico ---
-            # Adiciona a mensagem do usuário e a resposta do bot
-            conversation_history.append({"sender": "user", "message": user_input})
-            conversation_history.append({"sender": "bot", "message": bot_response})
-            # Aplica o limite de histórico
-            session['chat_history'] = conversation_history[-MAX_HISTORY_MESSAGES:]
-            session.modified = True # Garante que a sessão seja salva
-            # ---------------------------------
-
-        except Exception as e:
-            logging.exception("Erro ao chamar chatbot_handler.process_input.")
-            # Define uma resposta de erro padrão para o usuário
-            final_response_data["response"] = "Desculpe, ocorreu um erro interno ao processar sua mensagem. Tente novamente mais tarde."
-            # Não retorna 500 aqui para permitir que a resposta de erro seja salva na sessão e enviada
-    else:
-         logging.info("Resposta final definida pelo backend, pulando chamada ao LLM.")
-
-    # Retorna a resposta final para o frontend
-    return jsonify(final_response_data)
+# --- Rota para Limpar Histórico ---
+@app.route('/reset', methods=['POST'])
+def reset_chat():
+    if 'chat_history' in session:
+        session.pop('chat_history', None)
+        logging.info("Histórico da conversa resetado via /reset.")
+    return jsonify({"status": "success", "message": "Histórico resetado."})
+# ---------------------------------
 
 # --- Endpoint: Gerenciar Cardápio ---
 @app.route('/menu', methods=['GET', 'POST'])

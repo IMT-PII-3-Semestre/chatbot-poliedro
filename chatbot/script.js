@@ -2,289 +2,232 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatBox = document.getElementById('chat-box');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
+    const resetButton = document.getElementById('reset-button');
 
-    // Chave para armazenar pedidos pendentes no KDS
-    const KDS_STORAGE_KEY = 'pedidosCozinhaPendentes';
-
-    // Variável para guardar a referência ao indicador de digitação
+    // Variable to hold the typing indicator element reference
     let typingIndicatorElement = null;
 
-    // --- Funções Auxiliares ---
+    // --- Helper Functions ---
 
     /** Gera um ID único para o pedido (simplificado) */
     function generateOrderId() {
         const now = new Date();
-        // Formato HHMMSS-XXX (XXX é aleatório)
         const timePart = now.toTimeString().slice(0, 8).replace(/:/g, '');
         const randomPart = Math.floor(100 + Math.random() * 900);
         return `${timePart}-${randomPart}`;
     }
 
     /** Salva um pedido no localStorage para ser exibido no KDS */
-    function saveOrderToKitchen(orderData) {
-        if (!orderData || !orderData.id) {
-            console.error("Tentativa de salvar dados de pedido inválidos:", orderData);
-            return;
-        }
-        try {
-            let pendingOrders = JSON.parse(localStorage.getItem(KDS_STORAGE_KEY) || '[]');
-            // Evita duplicatas pelo ID
-            if (!pendingOrders.some(o => o.id === orderData.id)) {
-                pendingOrders.push(orderData);
-                localStorage.setItem(KDS_STORAGE_KEY, JSON.stringify(pendingOrders));
-                console.log("Pedido salvo para cozinha via localStorage:", orderData);
+    function saveOrderToKitchen(orderText) {
+        console.log("Attempting to save order based on text:", orderText);
+        const orderMatch = orderText.match(/Pedido anotado: (.*?)\. Total: R\$ ([\d,\.]+)\./);
+        if (orderMatch && orderMatch.length >= 3) {
+            const itemsString = orderMatch[1];
+            const totalString = orderMatch[2].replace(',', '.');
+            const total = parseFloat(totalString);
+
+            const items = itemsString.split(', ').map(itemStr => {
+                const itemMatch = itemStr.match(/(\d+)x (.*)/);
+                return itemMatch ? { quantity: parseInt(itemMatch[1]), name: itemMatch[2].trim() } : null;
+            }).filter(item => item !== null);
+
+            if (items.length > 0 && !isNaN(total)) {
+                const orderData = {
+                    id: Date.now(),
+                    items: items,
+                    total: total,
+                    timestamp: new Date().toISOString()
+                };
+
+                try {
+                    let pendingOrders = JSON.parse(localStorage.getItem('pendingOrders') || '[]');
+                    pendingOrders.push(orderData);
+                    localStorage.setItem('pendingOrders', JSON.stringify(pendingOrders));
+                    console.log('Pedido salvo no localStorage para KDS:', orderData);
+                } catch (e) {
+                    console.error("Erro ao salvar pedido no localStorage:", e);
+                }
             } else {
-                console.warn("Tentativa de salvar pedido duplicado ignorada:", orderData.id);
+                console.error("Não foi possível extrair itens ou total do texto do pedido:", orderText);
             }
-        } catch (e) {
-            console.error("Erro ao salvar pedido no localStorage:", e);
-            // Considerar notificar o usuário sobre a falha?
+        } else {
+            console.error("Formato do texto de confirmação do pedido não reconhecido:", orderText);
         }
     }
 
-    // --- Funções da Interface do Chat ---
+    // --- Chat Interface Functions ---
 
-    /** Adiciona uma mensagem à caixa de chat */
-    function addMessage(text, sender) {
+    /** Adds a message or typing indicator to the chat box */
+    function addMessage(text, sender, isTyping = false) {
+        console.log(`DEBUG: addMessage called with text: "${text}", sender: ${sender}`);
+        // Remove previous typing indicator if adding a real message or new indicator
+        if (typingIndicatorElement && (!isTyping || sender === 'bot')) {
+            typingIndicatorElement.remove();
+            typingIndicatorElement = null;
+        }
+
         const messageWrapper = document.createElement('div');
-        messageWrapper.classList.add('message-wrapper', sender); // 'user' ou 'bot'
+        messageWrapper.classList.add('message-wrapper', sender);
 
         const avatar = document.createElement('div');
         avatar.classList.add('avatar');
-        avatar.innerHTML = sender === 'bot' ? '<i class="fas fa-robot"></i>' : 'U';
+        avatar.innerHTML = sender === 'bot' ? '<i class="fas fa-robot"></i>' : 'U'; // Use icon for bot
+
+        // --- FIX: Only append avatar if sender is 'bot' ---
+        if (sender === 'bot') {
+            messageWrapper.appendChild(avatar); // Add avatar first for bot
+        }
+        // --------------------------------------------------
 
         const messageContent = document.createElement('div');
         messageContent.classList.add('message-content');
 
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message');
-        // Substitui \n por <br> para mensagens do bot para renderizar quebras de linha
-        messageElement.innerHTML = sender === 'bot' ? text.replace(/\n/g, '<br>') : text;
-
-        messageContent.appendChild(messageElement);
-
-        // Ordem diferente para usuário e bot
-        if (sender === 'bot') {
-            messageWrapper.appendChild(avatar);
-            messageWrapper.appendChild(messageContent);
+        if (isTyping && sender === 'bot') {
+            // Create typing indicator element
+            const typingDiv = document.createElement('div');
+            typingDiv.classList.add('message', 'typing-indicator'); // Add message class for basic styling
+            typingDiv.innerHTML = `<span></span><span></span><span></span>`;
+            messageContent.appendChild(typingDiv);
+            typingIndicatorElement = messageWrapper; // Store reference to remove later
         } else {
-            messageWrapper.appendChild(messageContent);
-            messageWrapper.appendChild(avatar);
+            // Create regular message element
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            // Basic HTML rendering (replace newline with <br>) - careful with complex HTML
+            messageElement.innerHTML = text.replace(/\n/g, '<br>');
+            messageContent.appendChild(messageElement);
         }
+
+        messageWrapper.appendChild(messageContent); // Append the content div
+
+        // --- FIX: Only append avatar if sender is 'user' ---
+        if (sender === 'user') {
+            messageWrapper.appendChild(avatar); // Add avatar last for user
+        }
+        // ---------------------------------------------------
 
         chatBox.appendChild(messageWrapper);
+        console.log("DEBUG: Message wrapper appended:", messageWrapper);
         scrollToBottom();
+        // Return the actual message element if it was created (not the wrapper)
+        return messageContent.querySelector('.message:not(.typing-indicator)');
     }
 
-    /** Mostra o indicador de "digitando" */
-    function showLoadingIndicator() {
-        // Remove qualquer indicador anterior, caso exista
-        hideLoadingIndicator();
-
-        const indicatorWrapper = document.createElement('div');
-        indicatorWrapper.classList.add('message-wrapper', 'bot'); // Aparece como se fosse do bot
-
-        const avatar = document.createElement('div');
-        avatar.classList.add('avatar');
-        avatar.innerHTML = '<i class="fas fa-robot"></i>';
-
-        const messageContent = document.createElement('div');
-        messageContent.classList.add('message-content');
-
-        const indicator = document.createElement('div');
-        indicator.classList.add('typing-indicator');
-        indicator.innerHTML = '<span></span><span></span><span></span>'; // As três bolinhas
-
-        messageContent.appendChild(indicator);
-        indicatorWrapper.appendChild(avatar);
-        indicatorWrapper.appendChild(messageContent);
-
-        chatBox.appendChild(indicatorWrapper);
-        typingIndicatorElement = indicatorWrapper; // Guarda a referência
-        scrollToBottom();
+    /** Shows the typing indicator */
+    function showTypingIndicator() {
+        addMessage('', 'bot', true);
     }
 
-    /** Esconde o indicador de "digitando" */
-    function hideLoadingIndicator() {
+    /** Removes the typing indicator */
+    function hideTypingIndicator() {
         if (typingIndicatorElement) {
-            chatBox.removeChild(typingIndicatorElement);
+            typingIndicatorElement.remove();
             typingIndicatorElement = null;
         }
     }
 
-    /** Rola a caixa de chat para a última mensagem */
+    /** Scrolls the chat box to the bottom */
     function scrollToBottom() {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // --- Função Principal: Chamar API do Backend ---
-    async function callChatAPI(userMessage) {
-        const apiUrl = 'http://127.0.0.1:5000/chat'; // URL do backend Flask
+    // --- Main Function: Call Backend API ---
+    async function sendMessage() {
+        const messageText = userInput.value.trim();
+        if (!messageText) return;
 
-        // MOSTRA o indicador ANTES de chamar a API
-        showLoadingIndicator();
+        addMessage(messageText, 'user');
+        userInput.value = '';
+        showTypingIndicator();
+        setLoading(true);
 
         try {
-            const response = await fetch(apiUrl, {
+            const response = await fetch('http://localhost:5000/chat', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message: userMessage }),
-                credentials: 'include' // Envia cookies (necessário para session Flask)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: messageText }),
             });
 
-            // ESCONDE o indicador ANTES de processar a resposta (ok ou erro)
-            hideLoadingIndicator();
+            hideTypingIndicator();
 
             if (!response.ok) {
-                // Tenta ler a mensagem de erro do backend, se houver
-                let errorMsg = `Erro HTTP ${response.status} ${response.statusText}`;
-                try {
-                    const errorData = await response.json();
-                    if (errorData && errorData.error) {
-                        errorMsg += `: ${errorData.error}`;
-                    }
-                } catch (e) { /* Ignora erro ao parsear JSON de erro */ }
-                console.error('Erro na API:', errorMsg);
-                addMessage(`😕 Oops! Algo deu errado no servidor. ${errorMsg}`, 'bot');
+                const errorText = await response.text();
+                addMessage(`Erro: ${response.status} - ${errorText}`, 'bot error');
                 return;
             }
 
-            const data = await response.json();
+            const contentType = response.headers.get("content-type");
 
-            if (data && data.response) {
+            if (contentType && contentType.includes("application/json")) {
+                const data = await response.json();
                 const botResponseText = data.response;
-                addMessage(botResponseText, 'bot'); // Exibe a resposta do bot
-
-                // --- LÓGICA PARA SALVAR PEDIDO FINALIZADO NO KDS ---
-                // Verifica se a resposta contém a frase de finalização E os detalhes
-                const finalizationPhrase = "Seu pedido foi enviado para a cozinha!";
-                const hasDetails = botResponseText.includes("Total: R$") && botResponseText.includes("Pedido anotado:");
-
-                if (botResponseText.includes(finalizationPhrase) && hasDetails) {
-                    console.log(">>> FINALIZAÇÃO DETECTADA COM DETALHES <<<");
-
-                    const orderId = generateOrderId();
-                    let items = [];
-                    let total = null;
-
-                    // Extrai itens e total da MENSAGEM FINAL recebida do backend
-                    try {
-                        const itemsMatch = botResponseText.match(/Pedido anotado:(.*?)\. Total:/);
-                        const totalMatch = botResponseText.match(/Total: R\$\s*([\d,.]+)/);
-
-                        if (totalMatch && totalMatch[1]) {
-                            total = parseFloat(totalMatch[1].replace('.', '').replace(',', '.')); // Trata milhares e decimal
-                        }
-
-                        if (itemsMatch && itemsMatch[1]) {
-                            const itemsString = itemsMatch[1].trim();
-                            // Regex para dividir itens, considerando "Nx " opcional
-                            const itemParts = itemsString.split(/,\s*(?=(?:\d+\s*x\s+)?\S)|\s+e\s+(?=(?:\d+\s*x\s+)?\S)/);
-
-                            items = itemParts.map(part => {
-                                part = part.trim();
-                                const match = part.match(/^(?:(\d+)\s*x\s+)?(.+)$/i);
-                                if (match) {
-                                    const quantity = match[1] ? parseInt(match[1], 10) : 1;
-                                    const name = match[2].trim();
-                                    // Remove possível "(Preço não encontrado)" adicionado pelo backend
-                                    const cleanedName = name.replace(/\s*\(Preço não encontrado\)$/i, '').trim();
-                                    return { name: cleanedName, quantity: quantity };
-                                }
-                                return null; // Ignora partes que não casam com o padrão
-                            }).filter(item => item !== null && item.name); // Filtra nulos e itens sem nome
-
-                            if (items.length === 0) {
-                                 console.warn("Finalização detectada, mas não foi possível parsear itens da string:", itemsString);
-                                 items = [{ name: "Pedido confirmado (detalhes indisponíveis)", quantity: 1 }]; // Fallback
-                            }
-                        } else {
-                             console.warn("Finalização detectada, mas regex de itens não encontrou padrão.");
-                             items = [{ name: "Pedido confirmado (detalhes indisponíveis)", quantity: 1 }]; // Fallback
-                        }
-                    } catch (parseError) {
-                         console.error("Erro ao parsear detalhes do pedido finalizado:", parseError);
-                         items = [{ name: "Pedido confirmado (erro ao parsear)", quantity: 1 }]; // Fallback
-                         total = null;
-                    }
-
-                    // Monta os dados para salvar no KDS
-                    const orderData = {
-                        id: orderId,
-                        items: items,
-                        total: total, // Pode ser null se não foi parseado
-                        timestamp: new Date().toISOString(),
-                        status: 'Pendente' // Status inicial
-                    };
-
-                    console.log("Dados do pedido finalizado a serem salvos no KDS:", orderData);
-                    saveOrderToKitchen(orderData);
-
-                } else if (botResponseText.includes(finalizationPhrase)) {
-                    // Finalizou, mas sem detalhes (talvez erro no backend ou fallback)
-                    console.warn("Finalização detectada, mas SEM detalhes parseáveis na resposta.");
-                    // Salva um pedido genérico para indicar que algo foi finalizado
-                    saveOrderToKitchen({
-                        id: generateOrderId(),
-                        items: [{ name: "Pedido confirmado (sem detalhes)", quantity: 1 }],
-                        total: null,
-                        timestamp: new Date().toISOString(),
-                        status: 'Pendente'
-                    });
-                } else {
-                    // Não é uma mensagem de finalização
-                    console.log("Resposta do bot não é de finalização.");
-                }
-                // --- FIM DA LÓGICA DE FINALIZAÇÃO ---
-
-            } else if (data && data.error) {
-                 // Se o backend retornou um erro JSON conhecido
-                 console.error("Erro retornado pela API:", data.error);
-                 addMessage(`😕 Erro do servidor: ${data.error}`, 'bot');
+                addMessage(botResponseText, 'bot');
+                saveOrderToKitchen(botResponseText);
             } else {
-                 // Resposta inesperada ou vazia
-                 console.error("Resposta inválida ou vazia recebida da API:", data);
-                 addMessage("Desculpe, não recebi uma resposta válida do servidor.", 'bot');
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let botMessageElement = addMessage('', 'bot');
+                let currentBotText = '';
+
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    currentBotText += chunk;
+                    botMessageElement.innerHTML = currentBotText.replace(/\n/g, '<br>');
+                    scrollToBottom();
+                }
             }
 
         } catch (error) {
-            // ESCONDE o indicador também em caso de erro geral de fetch
-            hideLoadingIndicator();
-            console.error('Erro geral ao chamar a API:', error);
-            addMessage("Desculpe, ocorreu um erro ao conectar com o servidor. Verifique sua conexão ou tente mais tarde.", 'bot');
+            hideTypingIndicator();
+            console.error('Erro ao enviar mensagem:', error);
+            addMessage('Oops! Algo deu errado ao conectar com o chatbot.', 'bot error');
+        } finally {
+            setLoading(false);
         }
     }
 
-    /** Lida com o envio da mensagem pelo usuário */
-    function handleSend() {
-        const userText = userInput.value.trim();
-        if (userText) {
-            addMessage(userText, 'user');
-            userInput.value = '';
-            // Não mostra mais "Digitando..."
-            callChatAPI(userText);
+    /** Function to reset the chat */
+    async function resetChat() {
+        console.log("Resetando conversa...");
+        chatBox.innerHTML = '';
+        startChat();
+
+        try {
+            const response = await fetch('http://localhost:5000/reset', { method: 'POST' });
+            const data = await response.json();
+            console.log("Reset response:", data.message);
+        } catch (error) {
+            console.error('Erro ao resetar histórico no backend:', error);
         }
-        userInput.focus();
+    }
+
+    /** Shows or hides the loading state */
+    function setLoading(isLoading) {
+        sendButton.disabled = isLoading;
+        userInput.disabled = isLoading;
+        sendButton.innerHTML = isLoading ? '<i class="fas fa-spinner fa-spin"></i>' : '<i class="fas fa-paper-plane"></i>';
     }
 
     // --- Event Listeners ---
-    sendButton.addEventListener('click', handleSend);
+    sendButton.addEventListener('click', sendMessage);
     userInput.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') {
-            handleSend();
+        if (event.key === 'Enter' && !userInput.disabled) {
+            sendMessage();
         }
     });
+    resetButton.addEventListener('click', resetChat);
 
-    /** Inicia a conversa com mensagens de boas-vindas */
+    /** Starts the chat with a greeting */
     function startChat() {
-        // Adiciona mensagens iniciais diretamente
-        addMessage("Olá! Sou o assistente virtual do Restaurante Poliedro. 👋", 'bot');
-        addMessage("Como posso ajudar você hoje?", 'bot');
+        console.log("DEBUG: startChat function called."); // Add this
+        addMessage('Olá! Bem-vindo ao Restaurante Poliedro. Como posso ajudar?', 'bot');
         userInput.focus();
+        console.log("DEBUG: startChat function finished."); // Add this
     }
 
-    // Inicializa o chat
+    // Initialize the chat on page load
+    console.log("DEBUG: Initializing chat..."); // Add this
     startChat();
 });

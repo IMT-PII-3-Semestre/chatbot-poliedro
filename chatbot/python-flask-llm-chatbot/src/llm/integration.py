@@ -7,7 +7,7 @@ from decimal import Decimal, InvalidOperation
 logging.basicConfig(level=logging.INFO)
 
 class LLMIntegration:
-    def __init__(self, ollama_url, model_name, timeout=60, temperature=0.5):
+    def __init__(self, ollama_url, model_name, timeout=90, temperature=0.5):
         self.ollama_url = ollama_url
         self.model_name = model_name
         self.timeout = timeout  # Armazene o timeout
@@ -134,33 +134,29 @@ Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 
 
     def generate_response(self, user_input, conversation_history=None):
         """
-        Gera uma resposta da API Ollama, incluindo o histórico da conversa no prompt.
+        Gera uma resposta da API Ollama em modo streaming, incluindo o histórico.
+        Yields:
+            str: Pedaços (tokens) da resposta do LLM conforme são recebidos.
         """
         current_base_context = self._build_base_context()
-
-        # --- Construção do Histórico para o Prompt ---
         history_prompt_part = ""
         if conversation_history:
-            # Formata o histórico como uma sequência de Cliente/Assistente
             history_lines = []
             for entry in conversation_history:
                 sender_label = "Cliente" if entry.get("sender") == "user" else "Assistente"
                 history_lines.append(f"{sender_label}: {entry.get('message', '')}")
-            history_prompt_part = "\n".join(history_lines) + "\n\n"  # Adiciona nova linha dupla no final
-        # ---------------------------------------------
+            history_prompt_part = "\n".join(history_lines) + "\n\n"
 
-        # Adiciona o histórico formatado e a entrada atual do usuário ao prompt
         full_prompt = f"{current_base_context}\n\n{history_prompt_part}Cliente: {user_input}\nAssistente:"
 
-        # Log apenas o início e o fim do prompt para evitar logs muito longos
         log_prompt_start = full_prompt[:300]
         log_prompt_end = full_prompt[-200:]
-        logging.info(f"Enviando prompt para Ollama (modelo: {self.model_name}, início/fim):\n{log_prompt_start}...\n...\n{log_prompt_end}")
+        logging.info(f"Enviando prompt para Ollama (modelo: {self.model_name}, stream=True, início/fim):\n{log_prompt_start}...\n...\n{log_prompt_end}")
 
         payload = {
             "model": self.model_name,
             "prompt": full_prompt,
-            "stream": False,
+            "stream": True, # <<< ALTERADO PARA TRUE
             "options": {
                 "temperature": self.temperature,
                 "stop": ["Cliente:", "\nCliente:", "\n\nCliente:"]
@@ -169,27 +165,39 @@ Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 
         headers = {'Content-Type': 'application/json'}
 
         try:
-            response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout)
-            response.raise_for_status()
-            response_data = response.json()
+            # Use stream=True na requisição requests
+            with requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout, stream=True) as response:
+                response.raise_for_status()
+                logging.info("Conexão de streaming estabelecida com Ollama.")
 
-            generated_text = response_data.get('response', '').strip()
-            # Limpeza de tokens de parada (sem mudanças aqui)
-            for stop_token in payload.get("options", {}).get("stop", []):
-                if generated_text.endswith(stop_token):
-                    generated_text = generated_text[:-len(stop_token)].strip()
+                # Processa a resposta linha por linha (cada linha é um JSON)
+                for line in response.iter_lines():
+                    if line:
+                        try:
+                            chunk_data = json.loads(line.decode('utf-8'))
+                            token = chunk_data.get('response', '')
+                            # Verifica se o stream terminou (Ollama pode enviar um chunk final sem 'response')
+                            is_done = chunk_data.get('done', False)
 
-            logging.info(f"Resposta recebida do Ollama: '{generated_text}'")
-            return generated_text
+                            if token:
+                                yield token # Envia o token para o chamador
+
+                            if is_done:
+                                logging.info("Stream de Ollama finalizado.")
+                                break # Sai do loop se o Ollama indicar que terminou
+                        except json.JSONDecodeError:
+                            logging.warning(f"Ignorando linha inválida no stream: {line}")
+                        except Exception as e:
+                            logging.exception(f"Erro ao processar chunk do stream: {e}")
+                            yield f"\n[Erro no stream: {e}]\n" # Informa erro no stream
+                            break
+
         except requests.exceptions.Timeout:
-            logging.error(f"Timeout ({self.timeout}s) ao chamar a API Ollama em {self.ollama_url}")
-            return "Desculpe, o serviço demorou muito para responder. Tente novamente."
+            logging.error(f"Timeout ({self.timeout}s) ao conectar/receber stream da API Ollama em {self.ollama_url}")
+            yield "[Erro: Timeout ao conectar com o assistente]"
         except requests.exceptions.RequestException as e:
-            logging.exception(f"Erro de rede ou HTTP ao chamar a API Ollama: {e}")
-            return "Desculpe, não consegui me conectar ao serviço de chat no momento."
-        except json.JSONDecodeError:
-            logging.exception(f"Erro ao decodificar resposta JSON da API Ollama.")
-            return "Desculpe, recebi uma resposta inesperada do serviço de chat."
+            logging.exception(f"Erro de rede ou HTTP ao chamar a API Ollama (stream): {e}")
+            yield f"[Erro: Falha na comunicação com o assistente ({e})]"
         except Exception as e:
-            logging.exception(f"Erro inesperado em generate_response: {e}")
-            return "Desculpe, ocorreu um erro interno inesperado."
+            logging.exception(f"Erro inesperado em generate_response (stream): {e}")
+            yield "[Erro: Ocorreu um problema inesperado]"

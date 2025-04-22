@@ -30,15 +30,37 @@ body {
 }
 
 .chat-header {
-    background: linear-gradient(135deg, #6572e6 0%, #5c67e0 100%); /* Gradiente no cabeçalho */
-    color: #ffffff;
-    padding: 15px 25px;
-    border-radius: 20px 20px 0 0;
-    flex-shrink: 0;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Sombra */
-    position: relative;
-    z-index: 1;
+    background-color: #5C67E0; /* Your existing color */
+    color: white;
+    padding: 10px 15px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    display: flex;
+    justify-content: space-between; /* Pushes title left, button right */
+    align-items: center; /* Vertically aligns items */
 }
+
+.chat-header h2 {
+    margin: 0; /* Remove default margin */
+    font-size: 1.1em;
+}
+
+/* Style the new reset button */
+#reset-button {
+    background-color: #ffffff;
+    color: #5C67E0;
+    border: 1px solid #5C67E0;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+#reset-button:hover {
+    background-color: #f0f0f0;
+}
+
 /* Efeito de brilho sutil no cabeçalho (opcional) */
 .chat-header::before {
     content: '';
@@ -51,7 +73,6 @@ body {
     border-radius: 20px 20px 0 0;
     pointer-events: none; /* Não interfere com cliques */
 }
-
 
 .header-content {
     display: flex;
@@ -78,15 +99,12 @@ body {
     margin: 0;
 }
 
-
 .chat-box {
-    flex-grow: 1; /* Ocupa espaço disponível */
-    padding: 25px; /* Espaçamento interno */
-    overflow-y: auto; /* Habilita rolagem vertical */
-    background-color: #f7f8fa; /* Fundo claro para área de mensagens */
-    display: flex;
-    flex-direction: column;
-    gap: 10px; /* Espaço entre mensagens */
+    height: 400px; /* Or your desired height */
+    overflow-y: auto;
+    padding: 15px;
+    background-color: #fff; /* Ensure background */
+    border-bottom: 1px solid #eee; /* Separator line */
 }
 
 /* Estilização da Barra de Rolagem (Webkit) */
@@ -231,7 +249,6 @@ body {
     border-bottom: 0; /* Ajusta formato do triângulo */
 }
 
-
 .message code { /* Estilo para código inline */
     background-color: rgba(0, 0, 0, 0.07);
     padding: 2px 6px;
@@ -286,25 +303,19 @@ body {
 }
 
 .input-area { /* Área de digitação na parte inferior */
-    display: flex;
-    align-items: center;
-    padding: 15px 20px;
-    border-top: 1px solid #e8e8e8;
-    background-color: #f0f2f5; /* Fundo levemente acinzentado */
-    border-radius: 0 0 20px 20px;
-    flex-shrink: 0;
+    display: flex; /* Use flexbox for input and button */
+    padding: 10px 15px;
+    background-color: #f9f9f9; /* Optional background */
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
 }
 
 #user-input { /* Campo de texto para o usuário digitar */
-    flex-grow: 1; /* Ocupa espaço disponível */
-    padding: 12px 20px; /* Input maior */
-    border: 1px solid #dcdcdc;
-    border-radius: 22px; /* Completamente arredondado */
-    margin-right: 12px;
-    font-size: 0.95em;
-    outline: none;
-    background-color: #ffffff;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    flex-grow: 1; /* Allow input to take available space */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 20px; /* Rounded corners */
+    margin-right: 10px; /* Space between input and button */
 }
 
 #user-input:focus {
@@ -313,31 +324,28 @@ body {
 }
 
 #send-button { /* Botão de enviar mensagem */
-    background: linear-gradient(135deg, #6572e6, #5c67e0); /* Gradiente */
+    padding: 10px 15px;
+    background-color: #5C67E0;
     color: white;
     border: none;
-    width: 44px;
-    height: 44px;
-    border-radius: 50%; /* Botão redondo */
+    border-radius: 20px; /* Match input rounding */
     cursor: pointer;
-    font-size: 1.3em; /* Ícone maior */
-    transition: all 0.2s ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    transition: background-color 0.2s;
 }
 
 #send-button:hover {
-    background: linear-gradient(135deg, #5c67e0, #4a56c0); /* Escurece no hover */
-    transform: scale(1.35); /* Aumenta no hover */
-    box-shadow: 0 5px 10px rgba(0,0,0,0.15);
+    background-color: #4a54b8;
 }
 
 #send-button:active { /* Efeito ao clicar */
     transform: scale(0.98);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Add styles for disabled button during loading */
+#send-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
 }
 
 /* Animação de Fade In para as mensagens */

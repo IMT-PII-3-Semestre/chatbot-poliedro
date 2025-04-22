@@ -31,9 +31,7 @@ O **Chatbot Poliedro** é um sistema de atendimento automatizado que utiliza int
 
 ## Tecnologias Empregadas
 
-Este projeto utiliza uma combinação de tecnologias para o frontend, backend e ferramentas de desenvolvimento:
-
-### Frontend (Interface do Chat e Painel KDS/Admin)
+### Frontend (Interface do Chat e Painel KDS)
 
 -   **HTML5**: Estruturação das páginas web ([`chatbot/index.html`](chatbot/index.html), [`chatbot/kds.html`](chatbot/kds.html)).
 -   **CSS3**: Estilização e layout visual ([`chatbot/style.css`](chatbot/style.css), [`chatbot/kds.css`](chatbot/kds.css)).

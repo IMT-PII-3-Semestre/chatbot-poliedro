@@ -5,7 +5,7 @@ import re
 from decimal import Decimal, InvalidOperation
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
-from dotenv import load_dotenv  # Importar load_dotenv
+from dotenv import load_dotenv
 
 # Ajustar imports se a estrutura de diretórios mudar
 from chatbot.handler import ChatbotHandler
@@ -36,6 +36,9 @@ MENU_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'menu.
 # Ler palavras de confirmação do .env, dividir por vírgula e criar um set
 confirmation_words_str = os.getenv("CONFIRMATION_WORDS", "sim,correto,só isso,pode confirmar,confirmo,isso mesmo")
 CONFIRMATION_WORDS = set(word.strip().lower() for word in confirmation_words_str.split(',') if word.strip())
+
+# --- Constantes ---
+MAX_HISTORY_MESSAGES = 6  # Keep last 6 messages (3 user, 3 bot turns)
 
 # --- Inicialização dos Componentes ---
 try:
@@ -103,10 +106,10 @@ def chat():
     if not chatbot_handler:
          return jsonify({"error": "Chatbot não inicializado corretamente."}), 500
 
-    data = request.json
+    data = request.get_json()
     if not data or 'message' not in data:
         logging.warning("Requisição para /chat sem 'message' no corpo JSON.")
-        return jsonify({"error": "JSON inválido ou chave 'message' ausente."}), 400
+        return jsonify({"error": "Mensagem não fornecida."}), 400
 
     user_input = data['message']
     if not isinstance(user_input, str) or not user_input.strip():
@@ -114,22 +117,28 @@ def chat():
         return jsonify({"error": "Mensagem não pode ser vazia."}), 400
 
     user_input = user_input.strip()
+    logging.info(f"Mensagem recebida do usuário: '{user_input}'")
 
-    # Recupera a última mensagem do bot da sessão
-    last_bot_message = session.get('last_bot_message', '')
-    logging.info(f"Sessão - Última mensagem do bot recuperada: '{last_bot_message}'")
+    # --- Gerenciamento do Histórico ---
+    # 1. Inicializa/Recupera o histórico da sessão
+    if 'chat_history' not in session:
+        session['chat_history'] = []
+    conversation_history = session['chat_history']
+    # ---------------------------------
 
+    # Verifica se é uma confirmação de pedido
     user_input_cleaned = user_input.lower().strip().rstrip('.,!')
     is_user_confirming = user_input_cleaned in CONFIRMATION_WORDS
-    last_bot_asked_confirmation = last_bot_message.strip().endswith("Correto?")
+    last_bot_message = conversation_history[-1]['message'] if conversation_history and conversation_history[-1]['sender'] == 'bot' else ""
+    is_after_confirmation_prompt = "Correto?" in last_bot_message
 
     logging.info(f"Input usuário: '{user_input}', Limpo: '{user_input_cleaned}', Confirmando: {is_user_confirming}")
-    logging.info(f"Sessão - Última msg bot terminou com 'Correto?': {last_bot_asked_confirmation}")
+    logging.info(f"Sessão - Última msg bot terminou com 'Correto?': {is_after_confirmation_prompt}")
 
     final_response_data = {"response": None} # Usar um dict para facilitar adição de dados futuros
 
     # --- LÓGICA DE FINALIZAÇÃO PELO BACKEND ---
-    if is_user_confirming and last_bot_asked_confirmation:
+    if is_user_confirming and is_after_confirmation_prompt:
         logging.info("Usuário confirmou pedido. Iniciando finalização pelo backend.")
         try:
             match = re.search(r'Entendido\.\s*(.*?)\.\s*Correto\?', last_bot_message, re.IGNORECASE | re.DOTALL)
@@ -195,6 +204,15 @@ def chat():
                         # Aqui podemos adicionar a lógica para realmente enviar para a cozinha/KDS
                         # Ex: save_order_to_kds(parsed_items_details, total_price)
 
+                        # --- Atualização do Histórico ---
+                        # Adiciona a mensagem do usuário e a resposta final do bot
+                        conversation_history.append({"sender": "user", "message": user_input})
+                        conversation_history.append({"sender": "bot", "message": final_response_data["response"]})
+                        # Aplica o limite de histórico
+                        session['chat_history'] = conversation_history[-MAX_HISTORY_MESSAGES:]
+                        session.modified = True # Garante que a sessão seja salva
+                        # ---------------------------------
+
             else:
                 logging.warning(f"Finalização: Última mensagem do bot não correspondeu ao formato de confirmação esperado: '{last_bot_message}'")
                 # Mantém a resposta genérica, pois não sabemos o que confirmar
@@ -209,9 +227,19 @@ def chat():
         logging.info("Condição de finalização backend não atendida ou falhou. Chamando LLM.")
         try:
             # Processa a entrada do usuário usando o handler do chatbot (que chama o LLM)
-            llm_response = chatbot_handler.process_input(user_input)
-            final_response_data["response"] = llm_response
+            bot_response = chatbot_handler.process_input(user_input, conversation_history)
+            final_response_data["response"] = bot_response
             logging.info(f"Resposta recebida do LLM: '{final_response_data['response']}'")
+
+            # --- Atualização do Histórico ---
+            # Adiciona a mensagem do usuário e a resposta do bot
+            conversation_history.append({"sender": "user", "message": user_input})
+            conversation_history.append({"sender": "bot", "message": bot_response})
+            # Aplica o limite de histórico
+            session['chat_history'] = conversation_history[-MAX_HISTORY_MESSAGES:]
+            session.modified = True # Garante que a sessão seja salva
+            # ---------------------------------
+
         except Exception as e:
             logging.exception("Erro ao chamar chatbot_handler.process_input.")
             # Define uma resposta de erro padrão para o usuário
@@ -219,10 +247,6 @@ def chat():
             # Não retorna 500 aqui para permitir que a resposta de erro seja salva na sessão e enviada
     else:
          logging.info("Resposta final definida pelo backend, pulando chamada ao LLM.")
-
-    # Armazena a resposta final na sessão para a próxima requisição
-    session['last_bot_message'] = final_response_data["response"]
-    logging.info(f"Sessão - Armazenando resposta final: '{final_response_data['response']}'")
 
     # Retorna a resposta final para o frontend
     return jsonify(final_response_data)

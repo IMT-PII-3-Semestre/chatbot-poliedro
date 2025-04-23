@@ -132,10 +132,12 @@ def chat():
     if is_user_confirming and last_bot_asked_confirmation:
         logging.info("Usuário confirmou pedido. Iniciando finalização pelo backend.")
         try:
-            match = re.search(r'Entendido\.\s*(.*?)\.\s*Correto\?', last_bot_message, re.IGNORECASE | re.DOTALL)
+            # Regex ajustado para capturar a lista entre "Você pediu:" e "Correto?"
+            match = re.search(r'Entendido\.\s*Você\s+pediu:\s*(.*?)\s*Correto\?', last_bot_message, re.IGNORECASE | re.DOTALL)
             if match:
                 items_string = match.group(1).strip()
-                item_parts = re.split(r',\s*(?![^()]*\))|\s+e\s+(?![^()]*\))|\s*além\s+de\s+(?![^()]*\))', items_string)
+                # Divide a string capturada em linhas e remove linhas vazias
+                item_lines = [line.strip() for line in items_string.splitlines() if line.strip()]
 
                 parsed_items_details = []
                 total_price = Decimal('0.00')
@@ -144,13 +146,19 @@ def chat():
 
                 if not menu:
                     logging.error("Finalização: Cardápio não pôde ser carregado para validação.")
-                    # Mensagem de erro mais específica se o menu não carregar
                     final_response_data["response"] = "Desculpe, não consigo verificar seu pedido pois o cardápio está indisponível no momento. Tente novamente mais tarde."
                 else:
-                    for part in item_parts:
-                        part = part.strip()
+                    # Itera sobre cada linha da lista de itens
+                    for line in item_lines:
+                        # Remove o prefixo '- ' se existir
+                        if line.startswith('- '):
+                            part = line[2:].strip()
+                        else:
+                            part = line # Se não começar com '- ', tenta parsear a linha inteira
+
                         if not part: continue
 
+                        # Usa o regex existente para extrair quantidade e nome
                         item_match = re.match(r'^(?:(\d+)\s*x\s+)?(.+)$', part, re.IGNORECASE)
                         if item_match:
                             quantity = int(item_match.group(1) or 1)
@@ -158,47 +166,40 @@ def chat():
                             name_lower = name.lower()
                             item_price = menu.get(name_lower)
 
+                            # Tenta encontrar sem parênteses se não achar com
                             if item_price is None:
                                 name_base = re.sub(r'\s*\(.*\)$', '', name).strip()
                                 item_price = menu.get(name_base.lower())
 
                             if item_price is not None:
-                                # Item válido, adiciona aos detalhes e soma preço
                                 parsed_items_details.append({"name": name, "quantity": quantity})
                                 total_price += item_price * quantity
                             else:
-                                # Item inválido (não encontrado no menu)
                                 logging.warning(f"Finalização: Item inválido confirmado pelo usuário: '{name}' (não encontrado no menu)")
-                                parse_errors.append(name) # Adiciona nome do item inválido à lista de erros
-                                # Não adiciona aos parsed_items_details válidos
+                                parse_errors.append(name)
                         else:
-                            logging.warning(f"Finalização: Não foi possível parsear estrutura do item confirmado: '{part}'")
-                            # Considera a parte inteira como erro se não conseguir parsear
-                            parse_errors.append(part)
+                            logging.warning(f"Finalização: Não foi possível parsear estrutura do item confirmado na linha: '{line}'")
+                            parse_errors.append(line) # Adiciona a linha inteira como erro
 
-                    # --- VERIFICAÇÃO DE ERROS ANTES DE FINALIZAR ---
+                    # --- VERIFICAÇÃO DE ERROS ANTES DE FINALIZAR --- (Lógica existente mantida)
                     if parse_errors:
-                        # Se houver itens inválidos, NÃO finaliza o pedido
                         invalid_items_str = ", ".join(parse_errors)
                         logging.error(f"Finalização BLOQUEADA. Itens inválidos detectados: {invalid_items_str}")
                         final_response_data["response"] = f"Desculpe, não posso finalizar o pedido. Os seguintes itens não estão no cardápio ou não foram reconhecidos: {invalid_items_str}. Por favor, peça novamente apenas com itens válidos."
                     elif not parsed_items_details:
-                         # Caso nenhum item tenha sido parseado com sucesso (mesmo sem erros explícitos de nome)
                          logging.error(f"Finalização BLOQUEADA. Nenhum item válido foi extraído da confirmação: '{items_string}'")
                          final_response_data["response"] = "Desculpe, não consegui entender os itens do seu pedido para finalizar. Poderia tentar novamente?"
                     else:
-                        # Nenhum erro, todos os itens são válidos -> Finaliza o pedido
                         items_final_string = ", ".join([f"{item['quantity']}x {item['name']}" for item in parsed_items_details])
                         total_str = f"{total_price:.2f}".replace('.', ',')
                         final_response_data["response"] = f"Ótimo! Pedido anotado: {items_final_string}. Total: R$ {total_str}. Seu pedido foi enviado para a cozinha!"
                         logging.info(f"Pedido finalizado pelo backend: {final_response_data['response']}")
-                        # Aqui podemos adicionar a lógica para realmente enviar para a cozinha/KDS
                         # Ex: save_order_to_kds(parsed_items_details, total_price)
 
             else:
-                logging.warning(f"Finalização: Última mensagem do bot não correspondeu ao formato de confirmação esperado: '{last_bot_message}'")
-                # Mantém a resposta genérica, pois não sabemos o que confirmar
-                final_response_data["response"] = "Entendido. Seu pedido foi registrado. (Não foi possível extrair detalhes)"
+                # Mensagem de log mais específica
+                logging.warning(f"Finalização: Regex não encontrou o padrão de confirmação esperado na mensagem do bot: '{last_bot_message}'")
+                final_response_data["response"] = "Entendido. Seu pedido foi registrado. (Não foi possível extrair detalhes via regex)"
 
         except Exception as e:
             logging.exception("Erro GERAL durante a finalização pelo backend.")

@@ -13,20 +13,5 @@
         "id": "item_2",
         "name": "Refrigerante Lata",
         "price": 5.0
-    },
-    {
-        "id": "item_3",
-        "name": "Teste",
-        "price": 1.0
-    },
-    {
-        "id": "item_4",
-        "name": "Teste 2",
-        "price": 2.0
-    },
-    {
-        "id": "item_1745272362355_d83738",
-        "name": "teste 3",
-        "price": 3.0
     }
 ]

@@ -198,13 +198,13 @@ body {
 .message-wrapper.bot .message { /* Estilo específico para bolha do bot */
     background-color: #ffffff;
     color: #333;
-    border-bottom-left-radius: 5px; /* Quebra o arredondamento para a cauda */
+    border-bottom-left-radius: 0px; /* Quebra o arredondamento para a cauda */
 }
 
 .message-wrapper.user .message { /* Estilo específico para bolha do usuário */
     background-color: #5C67E0; /* Cor principal */
     color: #ffffff;
-    border-bottom-right-radius: 5px; /* Quebra o arredondamento para a cauda */
+    border-bottom-right-radius: 0px; /* Quebra o arredondamento para a cauda */
 }
 
 /* Pseudo-elemento para criar a "cauda" da bolha */
@@ -214,7 +214,7 @@ body {
     bottom: 0px;
     width: 0;
     height: 0;
-    border: 10px solid transparent; /* Triângulo base */
+    border: 11px solid transparent; /* Triângulo base */
 }
 
 .message-wrapper.bot .message::before { /* Cauda para a bolha do bot */

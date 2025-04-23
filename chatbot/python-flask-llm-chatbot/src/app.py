@@ -5,21 +5,21 @@ import re
 from decimal import Decimal, InvalidOperation
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
-from dotenv import load_dotenv  # Importar load_dotenv
+from dotenv import load_dotenv
 
 # Ajustar imports se a estrutura de diretórios mudar
 from chatbot.handler import ChatbotHandler
 from llm.integration import LLMIntegration
 
 # --- Carregar Variáveis de Ambiente ---
-load_dotenv()  # Carrega variáveis do arquivo .env na raiz do projeto
+load_dotenv() # Carrega variáveis do arquivo .env na raiz do projeto
 
 # --- Configuração do Logging ---
+# Mantido INFO para logs importantes, mas debug logs serão removidos ou comentados
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # --- Configuração da Aplicação Flask ---
 app = Flask(__name__)
-# Use os.getenv para a chave secreta, com um padrão menos seguro para dev
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "chave-secreta-padrao-desenvolvimento")
 # Configurar modo debug a partir de variável de ambiente
 app.debug = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
@@ -28,8 +28,8 @@ CORS(app, supports_credentials=True)
 # --- Constantes e Configuração (Lidas do .env ou com padrões) ---
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mistral")
-OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", 60))  # Converter para int
-OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", 0.5))  # Converter para float
+OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", 60))
+OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", 0.5))
 
 MENU_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'menu.json')
 
@@ -87,7 +87,7 @@ def load_menu_data():
                     menu_dict[name] = price
                 except (InvalidOperation, ValueError, TypeError) as item_error:
                     logging.warning(f"Erro ao processar item de menu {item}: {item_error}")
-            logging.info(f"Cardápio carregado com {len(menu_dict)} itens válidos.")
+            # logging.info(f"Cardápio carregado com {len(menu_dict)} itens válidos.") # Log menos essencial removido
             return menu_dict
     except json.JSONDecodeError:
         logging.exception(f"Erro ao decodificar JSON do cardápio em: {MENU_FILE_PATH}")
@@ -117,16 +117,16 @@ def chat():
 
     # Recupera a última mensagem do bot da sessão
     last_bot_message = session.get('last_bot_message', '')
-    logging.info(f"Sessão - Última mensagem do bot recuperada: '{last_bot_message}'")
+    # logging.info(f"Sessão - Última mensagem do bot recuperada: '{last_bot_message}'") # Log de debug removido
 
     user_input_cleaned = user_input.lower().strip().rstrip('.,!')
     is_user_confirming = user_input_cleaned in CONFIRMATION_WORDS
     last_bot_asked_confirmation = last_bot_message.strip().endswith("Correto?")
 
-    logging.info(f"Input usuário: '{user_input}', Limpo: '{user_input_cleaned}', Confirmando: {is_user_confirming}")
-    logging.info(f"Sessão - Última msg bot terminou com 'Correto?': {last_bot_asked_confirmation}")
+    # logging.info(f"Input usuário: '{user_input}', Limpo: '{user_input_cleaned}', Confirmando: {is_user_confirming}") # Log de debug removido
+    # logging.info(f"Sessão - Última msg bot terminou com 'Correto?': {last_bot_asked_confirmation}") # Log de debug removido
 
-    final_response_data = {"response": None} # Usar um dict para facilitar adição de dados futuros
+    final_response_data = {"response": None}
 
     # --- LÓGICA DE FINALIZAÇÃO PELO BACKEND ---
     if is_user_confirming and last_bot_asked_confirmation:
@@ -181,7 +181,7 @@ def chat():
                             logging.warning(f"Finalização: Não foi possível parsear estrutura do item confirmado na linha: '{line}'")
                             parse_errors.append(line) # Adiciona a linha inteira como erro
 
-                    # --- VERIFICAÇÃO DE ERROS ANTES DE FINALIZAR --- (Lógica existente mantida)
+                    # --- VERIFICAÇÃO DE ERROS ANTES DE FINALIZAR ---
                     if parse_errors:
                         invalid_items_str = ", ".join(parse_errors)
                         logging.error(f"Finalização BLOQUEADA. Itens inválidos detectados: {invalid_items_str}")
@@ -194,11 +194,12 @@ def chat():
                         total_str = f"{total_price:.2f}".replace('.', ',')
                         final_response_data["response"] = f"Ótimo! Pedido anotado: {items_final_string}. Total: R$ {total_str}. Seu pedido foi enviado para a cozinha!"
                         logging.info(f"Pedido finalizado pelo backend: {final_response_data['response']}")
-                        # Ex: save_order_to_kds(parsed_items_details, total_price)
+                        # Ex: save_order_to_kds(parsed_items_details, total_price) # Exemplo de chamada futura
 
             else:
                 # Mensagem de log mais específica
                 logging.warning(f"Finalização: Regex não encontrou o padrão de confirmação esperado na mensagem do bot: '{last_bot_message}'")
+                # Resposta para o usuário caso o regex falhe em extrair
                 final_response_data["response"] = "Entendido. Seu pedido foi registrado. (Não foi possível extrair detalhes via regex)"
 
         except Exception as e:
@@ -207,23 +208,23 @@ def chat():
 
     # --- Se não for finalização pelo backend (ou se a finalização falhou e gerou uma resposta de erro) ---
     if final_response_data["response"] is None:
-        logging.info("Condição de finalização backend não atendida ou falhou. Chamando LLM.")
+        # logging.info("Condição de finalização backend não atendida ou falhou. Chamando LLM.") # Log de debug removido
         try:
             # Processa a entrada do usuário usando o handler do chatbot (que chama o LLM)
             llm_response = chatbot_handler.process_input(user_input)
             final_response_data["response"] = llm_response
-            logging.info(f"Resposta recebida do LLM: '{final_response_data['response']}'")
+            # logging.info(f"Resposta recebida do LLM: '{final_response_data['response']}") # Log de debug removido
         except Exception as e:
             logging.exception("Erro ao chamar chatbot_handler.process_input.")
             # Define uma resposta de erro padrão para o usuário
             final_response_data["response"] = "Desculpe, ocorreu um erro interno ao processar sua mensagem. Tente novamente mais tarde."
             # Não retorna 500 aqui para permitir que a resposta de erro seja salva na sessão e enviada
-    else:
-         logging.info("Resposta final definida pelo backend, pulando chamada ao LLM.")
+    # else:
+         # logging.info("Resposta final definida pelo backend, pulando chamada ao LLM.") # Log de debug removido
 
     # Armazena a resposta final na sessão para a próxima requisição
     session['last_bot_message'] = final_response_data["response"]
-    logging.info(f"Sessão - Armazenando resposta final: '{final_response_data['response']}'")
+    # logging.info(f"Sessão - Armazenando resposta final: '{final_response_data['response']}") # Log de debug removido
 
     # Retorna a resposta final para o frontend
     return jsonify(final_response_data)

@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /** Exibe uma mensagem temporária na área do formulário */
-    function showFormMessage(message, type = 'info') { // types: 'info', 'success', 'error'
+    function showFormMessage(message, type = 'info') { // tipos: 'info', 'success', 'error'
         if (!formMessage) {
             console.warn("Elemento #form-message não encontrado.");
             alert(message); // Fallback
@@ -186,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Busca o cardápio atual do backend */
     async function loadMenuFromAPI() {
-        console.log("Admin: Carregando cardápio da API...");
         try {
             const response = await fetch(API_MENU_URL); // GET por padrão
             if (!response.ok) {
@@ -203,7 +202,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ...item,
                 price: parseFloat(item.price) || 0 // Converte preço para número
             }));
-            console.log("Admin: Cardápio carregado e parseado:", menuItems);
         } catch (error) {
             console.error("Admin: Erro ao carregar cardápio da API:", error);
             showFormMessage(`Falha ao carregar o cardápio: ${error.message}`, 'error');
@@ -264,7 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Envia o cardápio atualizado para o backend */
     async function updateMenuOnBackend() {
-        console.log("Admin: Enviando atualização do cardápio para API...");
         try {
             const response = await fetch(API_MENU_URL, {
                 method: 'POST',
@@ -277,13 +274,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) {
                 throw new Error(result.error || `Erro HTTP ${response.status}`);
             }
-            console.log("Admin: Resposta da API ao atualizar:", result.message);
-            // Mensagem de sucesso já é mostrada por handleFormSubmit/handleDeleteClick
             return true; // Indica sucesso
         } catch (error) {
             console.error("Admin: Erro ao enviar atualização do cardápio:", error);
             showFormMessage(`Falha ao salvar cardápio no servidor: ${error.message}.`, 'error');
-            // Considerar recarregar da API para reverter visualmente? loadMenuFromAPI();
             return false; // Indica falha
         }
     }
@@ -319,7 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // Adicionando
             const newItem = {
-                id: `item_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`, // ID gerado no frontend
+                // ID gerado no frontend para simplificar, idealmente seria gerado no backend
+                id: `item_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
                 name: name,
                 price: price
             };
@@ -336,8 +331,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 resetForm();
             } else {
                 // Backend falhou, mensagem de erro já foi mostrada por updateMenuOnBackend
-                // Opcional: Reverter a mudança visual? (recarregar da API)
-                // loadMenuFromAPI();
             }
         } else {
             showFormMessage(message, 'error'); // Mostra erro (item não encontrado)
@@ -383,9 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (editingItemId === id) { // Se estava editando o item excluído
                         resetForm();
                     }
-                } else {
-                     // Backend falhou, mensagem de erro já foi mostrada.
-                     // Opcional: Reverter exclusão visual? loadMenuFromAPI();
                 }
             }
         } else {
@@ -410,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
     /** Alterna a visualização entre KDS e Admin */
     function switchView(targetViewId) {
         views.forEach(view => {
-            view.style.display = (view.id === targetViewId) ? 'block' : 'none'; // Ou 'grid' para admin?
+            view.style.display = (view.id === targetViewId) ? 'block' : 'none';
             view.classList.toggle('active-view', view.id === targetViewId);
         });
 
@@ -426,7 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMenuTable();
             resetForm(); // Reseta o formulário ao entrar na view admin
         }
-        console.log("Trocando para view:", targetViewId);
     }
 
     // ========================================================================
@@ -463,8 +452,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Listener para atualizações no localStorage (outras abas/janelas)
     window.addEventListener('storage', (event) => {
         if (event.key === KDS_STORAGE_KEY) {
-            console.log("KDS (storage event): Mudança detectada. Recarregando pedidos...");
-            // Verifica se a view KDS está ativa antes de tocar som
             const kdsViewElement = document.getElementById('kds-view');
             if (kdsViewElement && kdsViewElement.classList.contains('active-view')) {
                  renderOrders();
@@ -480,7 +467,6 @@ document.addEventListener('DOMContentLoaded', () => {
         await loadMenuFromAPI(); // Carrega o cardápio da API primeiro
         renderOrders(); // Renderiza os pedidos KDS iniciais
         switchView('kds-view'); // Define a view KDS como inicial
-        console.log("Aplicação KDS/Admin inicializada.");
     }
 
     initializeApp();

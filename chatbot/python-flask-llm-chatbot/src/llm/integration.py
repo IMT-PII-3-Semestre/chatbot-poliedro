@@ -4,14 +4,15 @@ import logging
 import os
 from decimal import Decimal, InvalidOperation
 
+# Configuração básica de logging (pode ser ajustada no app.py)
 logging.basicConfig(level=logging.INFO)
 
 class LLMIntegration:
     def __init__(self, ollama_url, model_name, timeout=60, temperature=0.5):
         self.ollama_url = ollama_url
         self.model_name = model_name
-        self.timeout = timeout  # Armazene o timeout
-        self.temperature = temperature  # Armazene a temperatura
+        self.timeout = timeout
+        self.temperature = temperature
         logging.info(f"LLMIntegration inicializado para o modelo '{self.model_name}' em {self.ollama_url} com timeout={self.timeout}, temp={self.temperature}")
 
     def _load_menu_from_json(self):
@@ -26,7 +27,7 @@ class LLMIntegration:
 
         if not os.path.exists(menu_path):
             logging.error(f"Arquivo menu.json não encontrado em {menu_path}")
-            return None  # Retorna None se o arquivo não existe
+            return None
 
         try:
             with open(menu_path, 'r', encoding='utf-8') as f:
@@ -34,14 +35,14 @@ class LLMIntegration:
 
             if not isinstance(menu_data, list):
                 logging.error(f"Formato inválido no menu.json: esperado uma lista, encontrado {type(menu_data)}.")
-                return None  # Retorna None se o formato não for lista
+                return None
 
             menu_items_formatted = []
             for item in menu_data:
                 if isinstance(item, dict) and 'name' in item and 'price' in item:
                     try:
                         price = Decimal(str(item['price']))
-                        if price >= 0:  # Garante que o preço não seja negativo
+                        if price >= 0: # Garante que o preço não seja negativo
                             menu_items_formatted.append(f"- {item['name']} (R$ {price:.2f})")
                         else:
                             logging.warning(f"Ignorando item com preço negativo no menu: {item}")
@@ -52,16 +53,16 @@ class LLMIntegration:
 
             if not menu_items_formatted:
                 logging.warning("Nenhum item válido encontrado no cardápio após o parse.")
-                return None  # Retorna None se nenhum item válido foi encontrado
+                return None
 
-            return "\n".join(menu_items_formatted)  # Retorna a string formatada apenas em caso de sucesso
+            return "\n".join(menu_items_formatted)
 
         except json.JSONDecodeError:
             logging.exception(f"Erro ao decodificar o arquivo menu.json em {menu_path}")
-            return None  # Retorna None em caso de erro de JSON
+            return None
         except Exception as e:
             logging.exception(f"Erro inesperado ao carregar menu.json: {e}")
-            return None  # Retorna None para qualquer outra exceção
+            return None
 
     def _build_base_context(self):
         """Constrói o prompt base com instruções, menu atualizado e exemplos,
@@ -72,34 +73,33 @@ class LLMIntegration:
         if menu_string is None:
             logging.error("Falha ao carregar o menu. Construindo prompt de erro para o LLM.")
             # Prompt mínimo informando o LLM sobre o problema
-            instructions = """You are a virtual assistant for the Poliedro Restaurant.
-ATTENTION: The menu could not be loaded due to an internal error.
-Your task is to politely inform the user that the menu is currently unavailable and you cannot take orders at this moment.
-Respond ONLY in Brazilian Portuguese. Example: "Desculpe, o cardápio está indisponível no momento e não consigo anotar pedidos. Por favor, tente novamente mais tarde."
-Do NOT ask what the user wants. Do NOT mention the error details.
-Assistente:"""  # Adiciona o início da resposta esperada
+            instructions = """Você é um assistente virtual para o Restaurante Poliedro.
+ATENÇÃO: O cardápio não pôde ser carregado devido a um erro interno.
+Sua tarefa é informar educadamente ao usuário que o cardápio está indisponível no momento e você não pode anotar pedidos.
+Responda APENAS em Português do Brasil. Exemplo: "Desculpe, o cardápio está indisponível no momento e não consigo anotar pedidos. Por favor, tente novamente mais tarde."
+NÃO pergunte o que o usuário deseja. NÃO mencione detalhes do erro.
+Assistente:"""
             return instructions
 
         # Se menu_string não for None, o menu foi carregado com sucesso. Construir prompt completo:
-        logging.info("Menu carregado com sucesso. Construindo prompt completo para o LLM.")
-        instructions = f"""You are a friendly and efficient virtual assistant for the Poliedro Restaurant. Your goal is to take customer orders based on the available menu. Be clear, direct, and polite. Your final response MUST be in Brazilian Portuguese. Only generate the response for the 'Assistente:'. Do NOT reproduce the examples below.
+        # logging.info("Menu carregado com sucesso. Construindo prompt completo para o LLM.") # Log de debug removido
+        instructions = f"""Você é um assistente virtual amigável e eficiente para o Restaurante Poliedro. Seu objetivo é anotar pedidos dos clientes com base no cardápio disponível. Seja claro, direto e educado. Sua resposta final DEVE ser em Português do Brasil. Gere apenas a resposta para o 'Assistente:'. NÃO reproduza os exemplos abaixo.
 
-**Current Menu (Cardápio Atual):**
+**Cardápio Atual:**
 {menu_string}
 
-**Additional Instructions:**
-- Respond naturally and grammatically correct in Brazilian Portuguese.
-- When the customer adds items, confirm by repeating the items as a bulleted list and asking if it's correct ("Correto?"). Use the format "Nx Item Name" for each item in the list. Start the confirmation with "Entendido. Você pediu:" followed by the list on new lines.
-- If the customer asks for something not on the menu, politely inform them that the item is not available today ("não está disponível hoje").
-- If the menu is unavailable (indicated by "Cardápio indisponível", "Erro ao carregar", etc.), state that clearly and do not ask what the user wants to order.
-- Do not chat about other topics. Focus only on taking the order or providing information about the menu.
-- Keep your answers concise.
-- **Finalizing Order:** When the user confirms the order is complete (e.g., says 'sim', 'correto', 'só isso', 'finalizar' AFTER you asked 'Correto?'), you MUST respond EXACTLY in this format: "Ótimo! Pedido anotado: [List of confirmed items, EACH prefixed with quantity like '1x Item Name', separated by comma and space]. Total: R$ XX.XX. Seu pedido foi enviado para a cozinha!". Calculate XX.XX based on the menu prices for the confirmed items. Example: "Ótimo! Pedido anotado: 1x Hambúrguer Clássico, 1x Refrigerante Lata. Total: R$ 20.50. Seu pedido foi enviado para a cozinha!"
+**Instruções Adicionais:**
+- Responda de forma natural e gramaticalmente correta em Português do Brasil.
+- Quando o cliente adicionar itens, confirme repetindo os itens como uma lista com marcadores e pergunte se está correto ("Correto?"). Use o formato "Nx Nome do Item" para cada item na lista. Comece a confirmação com "Entendido. Você pediu:" seguido pela lista em novas linhas.
+- Se o cliente pedir algo que não está no cardápio, informe educadamente que o item "não está disponível hoje".
+- Se o cardápio estiver indisponível (indicado por "Cardápio indisponível", "Erro ao carregar", etc.), afirme isso claramente e não pergunte o que o usuário deseja pedir.
+- Não converse sobre outros tópicos. Foque apenas em anotar o pedido ou fornecer informações sobre o cardápio.
+- Mantenha suas respostas concisas.
+- **Finalizando o Pedido:** Quando o usuário confirmar que o pedido está completo (ex: disser 'sim', 'correto', 'só isso', 'finalizar' DEPOIS que você perguntou 'Correto?'), você DEVE responder EXATAMENTE neste formato: "Ótimo! Pedido anotado: [Lista de itens confirmados, CADA um prefixado com quantidade como '1x Nome do Item', separados por vírgula e espaço]. Total: R$ XX,XX. Seu pedido foi enviado para a cozinha!". Calcule XX,XX com base nos preços do cardápio para os itens confirmados. Exemplo: "Ótimo! Pedido anotado: 1x Hambúrguer Clássico, 1x Refrigerante Lata. Total: R$ 20,50. Seu pedido foi enviado para a cozinha!"
 
---- EXAMPLES BELOW - DO NOT REPRODUCE ---
+--- EXEMPLOS ABAIXO - NÃO REPRODUZA ---
 
-**Interaction Examples (Exemplos de Interação):**
-(Note: Examples show the desired Portuguese output)
+**Exemplos de Interação:**
 
 Cliente: oi
 Assistente: Olá! Bem-vindo ao Restaurante Poliedro. Gostaria de ver o cardápio ou fazer um pedido?
@@ -117,7 +117,7 @@ Assistente: Entendido. Você pediu:
 Correto?
 
 Cliente: sim
-Assistente: Ótimo! Pedido anotado: 1x Hambúrguer Clássico, 1x Batata Frita (Média). Total: R$ 23.50. Seu pedido foi enviado para a cozinha!
+Assistente: Ótimo! Pedido anotado: 1x Hambúrguer Clássico, 1x Batata Frita (Média). Total: R$ 23,50. Seu pedido foi enviado para a cozinha!
 
 Cliente: quero um refri e dois teste 3
 Assistente: Entendido. Você pediu:
@@ -126,9 +126,9 @@ Assistente: Entendido. Você pediu:
 Correto?
 
 Cliente: sim, só isso
-Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 11.00. Seu pedido foi enviado para a cozinha!
+Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 11,00. Seu pedido foi enviado para a cozinha!
 
---- END OF EXAMPLES ---
+--- FIM DOS EXEMPLOS ---
 """
         return instructions
 
@@ -141,22 +141,22 @@ Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 
         # Adiciona a entrada atual do usuário ao prompt
         # Nota: conversation_history não está sendo usado atualmente, mas poderia ser adicionado aqui.
         full_prompt = f"{current_base_context}\n\nCliente: {user_input}\nAssistente:"
-        logging.info(f"Enviando prompt para Ollama (modelo: {self.model_name}, início):\n{full_prompt[:500]}...")
+        # logging.info(f"Enviando prompt para Ollama (modelo: {self.model_name}, início):\n{full_prompt[:500]}...") # Log de debug removido
 
         payload = {
             "model": self.model_name,
             "prompt": full_prompt,
             "stream": False,
             "options": {
-                "temperature": self.temperature,  # Use os valores armazenados no self
-                "stop": ["Cliente:", "\nCliente:", "\n\nCliente:"]
+                "temperature": self.temperature,
+                "stop": ["Cliente:", "\nCliente:", "\n\nCliente:"] # Tokens para parar a geração
             }
         }
         headers = {'Content-Type': 'application/json'}
 
         try:
-            response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout)  # Use o timeout armazenado no self
-            response.raise_for_status()  # Lança exceção para erros HTTP (4xx ou 5xx)
+            response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout)
+            response.raise_for_status() # Lança exceção para erros HTTP (4xx ou 5xx)
             response_data = response.json()
 
             # Limpa a resposta removendo potenciais tokens de parada no final
@@ -165,7 +165,7 @@ Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 
                 if generated_text.endswith(stop_token):
                     generated_text = generated_text[:-len(stop_token)].strip()
 
-            logging.info(f"Resposta recebida do Ollama: '{generated_text}'")
+            # logging.info(f"Resposta recebida do Ollama: '{generated_text}'") # Log de debug removido
             return generated_text
         except requests.exceptions.Timeout:
             logging.error(f"Timeout ({self.timeout}s) ao chamar a API Ollama em {self.ollama_url}")

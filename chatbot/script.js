@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const avatar = document.createElement('div');
         avatar.classList.add('avatar');
-        avatar.innerHTML = sender === 'bot' ? '<i class="fas fa-robot"></i>' : 'U';
+        avatar.innerHTML = sender === 'bot' ? '<i class="fas fa-robot"></i>' : 'U'; // 'U' para Usuário
 
         const messageContent = document.createElement('div');
         messageContent.classList.add('message-content');
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const hasDetails = botResponseText.includes("Total: R$") && botResponseText.includes("Pedido anotado:");
 
                 if (botResponseText.includes(finalizationPhrase) && hasDetails) {
-                    console.log(">>> FINALIZAÇÃO DETECTADA COM DETALHES <<<");
+                    // console.log(">>> FINALIZAÇÃO DETECTADA COM DETALHES <<<"); // Log de debug removido
 
                     const orderId = generateOrderId();
                     let items = [];
@@ -233,9 +233,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         timestamp: new Date().toISOString(),
                         status: 'Pendente'
                     });
-                } else {
-                    // Não é uma mensagem de finalização
-                    console.log("Resposta do bot não é de finalização.");
                 }
                 // --- FIM DA LÓGICA DE FINALIZAÇÃO ---
 
@@ -263,7 +260,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (userText) {
             addMessage(userText, 'user');
             userInput.value = '';
-            // Não mostra mais "Digitando..."
             callChatAPI(userText);
         }
         userInput.focus();

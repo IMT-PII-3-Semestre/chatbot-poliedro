@@ -69,42 +69,39 @@ class LLMIntegration:
            ou um prompt de erro se o menu não puder ser carregado."""
         menu_string = self._load_menu_from_json()
 
-        # Verifica se o carregamento do menu falhou
         if menu_string is None:
             logging.error("Falha ao carregar o menu. Construindo prompt de erro para o LLM.")
-            # Prompt mínimo informando o LLM sobre o problema
-            instructions = """Você é um assistente virtual para o Restaurante Poliedro.
-ATENÇÃO: O cardápio não pôde ser carregado devido a um erro interno.
-Sua tarefa é informar educadamente ao usuário que o cardápio está indisponível no momento e você não pode anotar pedidos.
-Responda APENAS em Português do Brasil. Exemplo: "Desculpe, o cardápio está indisponível no momento e não consigo anotar pedidos. Por favor, tente novamente mais tarde."
-NÃO pergunte o que o usuário deseja. NÃO mencione detalhes do erro.
+            instructions = """You are a virtual assistant for Poliedro Restaurant.
+ATTENTION: The menu could not be loaded due to an internal error.
+Your task is to politely inform the user that the menu is currently unavailable and you cannot take orders.
+Respond ONLY in Brazilian Portuguese. Example: "Desculpe, o cardápio está indisponível no momento e não consigo anotar pedidos. Por favor, tente novamente mais tarde."
+DO NOT ask what the user wants. DO NOT mention error details.
 Assistente:"""
             return instructions
 
-        # Se menu_string não for None, o menu foi carregado com sucesso. Construir prompt completo:
-        # logging.info("Menu carregado com sucesso. Construindo prompt completo para o LLM.") # Log de debug removido
-        instructions = f"""Você é um assistente virtual amigável e eficiente para o Restaurante Poliedro. Seu objetivo é anotar pedidos dos clientes com base no cardápio disponível. Seja claro, direto e educado. Sua resposta final DEVE ser em Português do Brasil. Gere apenas a resposta para o 'Assistente:'. NÃO reproduza os exemplos abaixo.
+        # Menu carregado com sucesso. Construir prompt completo com instruções em inglês:
+        instructions = f"""You are a friendly and efficient virtual assistant for Poliedro Restaurant. Your goal is to take customer orders based on the available menu. Be clear, direct, and polite. Your final response MUST be in Brazilian Portuguese. Generate only the response for 'Assistente:'. DO NOT reproduce the examples below.
 
-**Cardápio Atual:**
+**Current Menu (Cardápio Atual):**
 {menu_string}
 
-**Instruções Adicionais:**
-- Responda de forma natural e gramaticalmente correta em Português do Brasil.
-- Quando o cliente adicionar itens, confirme repetindo os itens como uma lista com marcadores e pergunte se está correto ("Correto?"). Use o formato "Nx Nome do Item" para cada item na lista. Comece a confirmação com "Entendido. Você pediu:" seguido pela lista em novas linhas.
-- Se o cliente pedir algo que não está no cardápio, informe educadamente que o item "não está disponível hoje".
-- Se o cardápio estiver indisponível (indicado por "Cardápio indisponível", "Erro ao carregar", etc.), afirme isso claramente e não pergunte o que o usuário deseja pedir.
-- Não converse sobre outros tópicos. Foque apenas em anotar o pedido ou fornecer informações sobre o cardápio.
-- Mantenha suas respostas concisas.
-- **Finalizando o Pedido:** Quando o usuário confirmar que o pedido está completo (ex: disser 'sim', 'correto', 'só isso', 'finalizar' DEPOIS que você perguntou 'Correto?'), você DEVE responder EXATAMENTE neste formato: "Ótimo! Pedido anotado: [Lista de itens confirmados, CADA um prefixado com quantidade como '1x Nome do Item', separados por vírgula e espaço]. Total: R$ XX,XX. Seu pedido foi enviado para a cozinha!". Calcule XX,XX com base nos preços do cardápio para os itens confirmados. Exemplo: "Ótimo! Pedido anotado: 1x Hambúrguer Clássico, 1x Refrigerante Lata. Total: R$ 20,50. Seu pedido foi enviado para a cozinha!"
+**Additional Instructions:**
+- Respond naturally and grammatically correct in Brazilian Portuguese.
+- **Confirmation Format:** When the customer adds items, confirm ONLY using the following exact format: Start with "Entendido. Você pediu:", followed by the bulleted list (format "Nx Item Name"), and end with "Correto?". Do NOT add any other conversational text before or after this specific confirmation structure.
+- If the customer asks for something not on the menu, politely inform them that the item "não está disponível hoje".
+- If the menu is unavailable (indicated by "Cardápio indisponível", "Erro ao carregar", etc.), state this clearly and do not ask what the user wants to order.
+- Do not chat about other topics. Focus only on taking the order or providing information about the menu.
+- Keep your answers concise.
+- **Finalizing the Order:** When the user confirms the order is complete (e.g., says 'sim', 'correto', 'só isso', 'finalizar' AFTER you asked 'Correto?'), you MUST respond EXACTLY in this format: "Ótimo! Pedido anotado: [List of confirmed items, EACH prefixed with quantity like '1x Item Name', separated by comma and space]. Total: R$ XX,XX. Seu pedido foi enviado para a cozinha!". Calculate XX,XX based on the menu prices for the confirmed items. Example: "Ótimo! Pedido anotado: 1x item(valor), 2x itens(valor). Total: R$(soma). Seu pedido foi enviado para a cozinha!"
 
---- EXEMPLOS ABAIXO - NÃO REPRODUZA ---
+--- EXAMPLES BELOW - DO NOT REPRODUCE (Exemplos em Português) ---
 
 **Exemplos de Interação:**
 
-Cliente: oi
+Cliente: Olá, bom dia! Estou com fome.
 Assistente: Olá! Bem-vindo ao Restaurante Poliedro. Gostaria de ver o cardápio ou fazer um pedido?
 
-Cliente: qual o cardapio?
+Cliente: o que tem hoje?
 Assistente: Claro! Nosso cardápio hoje é:\n{menu_string}\nO que você gostaria de pedir?
 
 Cliente: tem pizza?
@@ -125,23 +122,40 @@ Assistente: Entendido. Você pediu:
 - 2x teste 3
 Correto?
 
-Cliente: sim, só isso
+Cliente: é isso mesmo
 Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 11,00. Seu pedido foi enviado para a cozinha!
 
---- FIM DOS EXEMPLOS ---
+--- END OF EXAMPLES ---
 """
         return instructions
 
     def generate_response(self, user_input, conversation_history=None):
         """
-        Gera uma resposta da API Ollama, construindo o contexto atualizado a cada chamada.
+        Gera uma resposta da API Ollama, construindo o contexto atualizado
+        com o histórico da conversa a cada chamada.
         """
         current_base_context = self._build_base_context()
+        if current_base_context is None: # Se o menu falhou ao carregar, _build_base_context já retorna a msg de erro
+             # Neste caso, o prompt de erro já está formatado, podemos usá-lo diretamente
+             # ou apenas retornar a mensagem de erro padrão. Vamos usar o prompt de erro.
+             logging.warning("Usando prompt de erro pois o menu não foi carregado.")
+             # O prompt de erro já termina com "Assistente:", então não adicionamos mais nada.
+             full_prompt = current_base_context
+        else:
+            # Constrói a string do histórico
+            history_string = ""
+            if conversation_history:
+                # Pega as últimas N interações (ex: 6 turnos = 3 pares user/assistant)
+                # Ajuste o número conforme necessário para o tamanho do contexto do seu modelo
+                recent_history = conversation_history[-6:]
+                for entry in recent_history:
+                    role = "Cliente" if entry.get("role") == "user" else "Assistente"
+                    history_string += f"{role}: {entry.get('content', '')}\n"
 
-        # Adiciona a entrada atual do usuário ao prompt
-        # Nota: conversation_history não está sendo usado atualmente, mas poderia ser adicionado aqui.
-        full_prompt = f"{current_base_context}\n\nCliente: {user_input}\nAssistente:"
-        # logging.info(f"Enviando prompt para Ollama (modelo: {self.model_name}, início):\n{full_prompt[:500]}...") # Log de debug removido
+            # Monta o prompt final: Base + Histórico + Input Atual
+            full_prompt = f"{current_base_context}\n\n{history_string}Cliente: {user_input}\nAssistente:"
+
+        logging.debug(f"Prompt enviado para LLM (generate_response):\n{full_prompt}") # Log para debug
 
         payload = {
             "model": self.model_name,
@@ -149,24 +163,26 @@ Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 
             "stream": False,
             "options": {
                 "temperature": self.temperature,
-                "stop": ["Cliente:", "\nCliente:", "\n\nCliente:"] # Tokens para parar a geração
+                "stop": ["Cliente:", "\nCliente:", "\n\nCliente:"]
             }
         }
         headers = {'Content-Type': 'application/json'}
 
         try:
             response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout)
-            response.raise_for_status() # Lança exceção para erros HTTP (4xx ou 5xx)
+            response.raise_for_status()
             response_data = response.json()
 
-            # Limpa a resposta removendo potenciais tokens de parada no final
             generated_text = response_data.get('response', '').strip()
+            # Limpeza de tokens de parada (mantida como antes)
             for stop_token in payload.get("options", {}).get("stop", []):
                 if generated_text.endswith(stop_token):
                     generated_text = generated_text[:-len(stop_token)].strip()
 
-            # logging.info(f"Resposta recebida do Ollama: '{generated_text}'") # Log de debug removido
+            # Adiciona log da resposta gerada
+            logging.debug(f"Resposta recebida do LLM (generate_response): {generated_text}")
             return generated_text
+
         except requests.exceptions.Timeout:
             logging.error(f"Timeout ({self.timeout}s) ao chamar a API Ollama em {self.ollama_url}")
             return "Desculpe, o serviço demorou muito para responder. Tente novamente."
@@ -183,65 +199,74 @@ Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 
     def check_confirmation_intent(self, user_input, previous_question):
         """
         Verifica se a entrada do usuário indica uma confirmação positiva para a pergunta anterior.
-
-        Args:
-            user_input (str): A resposta do usuário.
-            previous_question (str): A pergunta de confirmação feita pelo bot (ex: "Correto?").
-
-        Returns:
-            str: 'sim' ou 'não' (em minúsculas) se a intenção for detectada com sucesso.
-                 Retorna uma string vazia "" em caso de erro ou resposta ambígua do LLM.
+        (Instructions translated to English, examples added)
         """
-        # Garante que a pergunta anterior termine com "Correto?" para o contexto do prompt
-        # (Pode ajustar se o formato da sua pergunta de confirmação mudar)
         if not previous_question.strip().endswith("Correto?"):
-             logging.warning("check_confirmation_intent chamado sem uma pergunta de confirmação padrão.")
-             # Poderia retornar "" aqui ou tentar mesmo assim, dependendo da robustez desejada.
-             # Vamos tentar mesmo assim, mas o prompt pode ser menos eficaz.
+             logging.warning("check_confirmation_intent called without a standard confirmation question.")
 
-        # Prompt específico para verificar a intenção
-        intent_prompt = f"""Contexto: O assistente perguntou ao cliente: "{previous_question}"
-Resposta do Cliente: "{user_input}"
+        # Prompt específico para verificar a intenção (em inglês, com exemplos)
+        intent_prompt = f"""Analyze the customer's response in the context of the assistant's question.
+The assistant asked the customer: "{previous_question}"
+Customer's Response: "{user_input}"
 
-A resposta do cliente indica uma confirmação positiva (sim, correto, pode finalizar, etc.)?
-Responda APENAS 'sim' ou 'não'."""
+Does the customer's response indicate a positive confirmation (agreement, yes, correct, proceed, finalize, etc.)?
+Answer ONLY 'yes' or 'no'.
 
-        logging.info(f"Verificando intenção de confirmação para: '{user_input}'")
+Examples:
+Customer's Response: "sim" -> yes
+Customer's Response: "é isso mesmo" -> yes
+Customer's Response: "correto" -> yes
+Customer's Response: "fechou" -> yes
+Customer's Response: "pode fechar" -> yes
+Customer's Response: "manda ver" -> yes
+Customer's Response: "não, quero mudar" -> no
+Customer's Response: "espera, adiciona mais uma coisa" -> no
+Customer's Response: "qual o valor?" -> no
+
+Based on the Customer's Response "{user_input}", is the intent a positive confirmation? Answer 'yes' or 'no':""" # Adicionado exemplos e reforçado o pedido
+
+        logging.info(f"Checking confirmation intent for: '{user_input}'")
 
         payload = {
             "model": self.model_name,
             "prompt": intent_prompt,
             "stream": False,
             "options": {
-                "temperature": 0.1, # Temperatura baixa para resposta direta
-                # Não precisa de 'stop' aqui, pois esperamos resposta curta
+                "temperature": 0.1, # Mantém temperatura baixa
             }
         }
         headers = {'Content-Type': 'application/json'}
 
         try:
-            response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout / 2) # Timeout menor para esta chamada rápida
+            response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout / 2)
             response.raise_for_status()
             response_data = response.json()
-            intent_result = response_data.get('response', '').strip().lower()
+            # Tenta pegar a resposta e limpar possíveis ruídos antes de 'yes' ou 'no'
+            raw_intent_result = response_data.get('response', '').strip().lower()
+            intent_result = ""
+            if raw_intent_result.startswith("yes"):
+                intent_result = "yes"
+            elif raw_intent_result.startswith("no"):
+                 intent_result = "no"
 
-            # Valida se a resposta é estritamente 'sim' ou 'não'
-            if intent_result == 'sim' or intent_result == 'não':
-                logging.info(f"Intenção detectada: '{intent_result}'")
-                return intent_result
+            # Valida se a resposta é estritamente 'yes' ou 'no'
+            if intent_result == 'yes' or intent_result == 'no':
+                logging.info(f"Intent detected: '{intent_result}' (Raw: '{raw_intent_result}')")
+                # Traduz de volta para 'sim'/'não' para consistência no backend Python
+                return 'sim' if intent_result == 'yes' else 'não'
             else:
-                logging.warning(f"Resposta inesperada do LLM para verificação de intenção: '{intent_result}'. Tratando como 'não'.")
-                return "não" # Ou retornar "" para indicar incerteza
+                logging.warning(f"Unexpected response from LLM for intent check: '{raw_intent_result}'. Treating as 'no'.")
+                return "não"
 
         except requests.exceptions.Timeout:
             logging.error(f"Timeout ao verificar intenção de confirmação com Ollama.")
-            return "" # Retorna vazio em caso de erro
+            return ""
         except requests.exceptions.RequestException as e:
             logging.exception(f"Erro de rede/HTTP ao verificar intenção de confirmação: {e}")
-            return "" # Retorna vazio em caso de erro
+            return ""
         except json.JSONDecodeError:
              logging.exception(f"Erro ao decodificar JSON da verificação de intenção: {response.text}")
-             return "" # Retorna vazio em caso de erro
+             return ""
         except Exception as e:
             logging.exception("Erro inesperado ao verificar intenção de confirmação.")
-            return "" # Retorna vazio em caso de erro
+            return ""

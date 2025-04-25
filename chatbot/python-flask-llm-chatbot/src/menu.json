@@ -13,5 +13,15 @@
         "id": "item_2",
         "name": "Refrigerante Lata",
         "price": 5.0
+    },
+    {
+        "id": "item_3",
+        "name": "Gatorade De Laranja",
+        "price": 8.5
+    },
+    {
+        "id": "item_1745605865393_b89eda",
+        "name": "Chuchu",
+        "price": 10.6
     }
 ]

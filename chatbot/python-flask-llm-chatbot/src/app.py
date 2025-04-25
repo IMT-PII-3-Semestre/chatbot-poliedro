@@ -96,6 +96,36 @@ def load_menu_data():
         logging.exception(f"Erro inesperado ao carregar dados do cardápio: {e}")
         return {}
 
+# --- Função Auxiliar para Descrição do Log ---
+def get_request_description(method, path):
+    """Retorna uma descrição em português para a requisição."""
+    if method == 'GET' and path == '/menu':
+        return "Requisição para obter o cardápio"
+    elif method == 'POST' and path == '/menu':
+        return "Requisição para atualizar o cardápio"
+    elif method == 'OPTIONS' and path == '/chat':
+        return "Requisição OPTIONS (preflight) para o chat"
+    elif method == 'POST' and path == '/chat':
+        return "Requisição para enviar mensagem ao chat"
+    else:
+        return f"Requisição {method} para {path}"
+
+# --- Decorador para Logar Após Cada Requisição ---
+@app.after_request
+def log_request_info(response):
+    """Loga detalhes da requisição com descrição em português após cada requisição."""
+    # Não loga se a requisição falhou antes de chegar aqui (raro)
+    if not request:
+        return response
+
+    description = get_request_description(request.method, request.path)
+    # Usa app.logger para adicionar a linha de log personalizada
+    app.logger.info(
+        f'>>> Descrição: {description} (Status: {response.status_code})'
+    )
+    # Retorna a resposta original para não interferir no fluxo
+    return response
+
 # --- Endpoint Principal: Chat ---
 @app.route('/chat', methods=['POST'])
 def chat():

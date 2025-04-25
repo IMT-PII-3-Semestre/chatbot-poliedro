@@ -179,3 +179,69 @@ Assistente: Ótimo! Pedido anotado: 1x Refrigerante Lata, 2x teste 3. Total: R$ 
         except Exception as e:
             logging.exception("Ocorreu um erro inesperado na integração com o LLM.")
             return "Desculpe, ocorreu um erro inesperado."
+
+    def check_confirmation_intent(self, user_input, previous_question):
+        """
+        Verifica se a entrada do usuário indica uma confirmação positiva para a pergunta anterior.
+
+        Args:
+            user_input (str): A resposta do usuário.
+            previous_question (str): A pergunta de confirmação feita pelo bot (ex: "Correto?").
+
+        Returns:
+            str: 'sim' ou 'não' (em minúsculas) se a intenção for detectada com sucesso.
+                 Retorna uma string vazia "" em caso de erro ou resposta ambígua do LLM.
+        """
+        # Garante que a pergunta anterior termine com "Correto?" para o contexto do prompt
+        # (Pode ajustar se o formato da sua pergunta de confirmação mudar)
+        if not previous_question.strip().endswith("Correto?"):
+             logging.warning("check_confirmation_intent chamado sem uma pergunta de confirmação padrão.")
+             # Poderia retornar "" aqui ou tentar mesmo assim, dependendo da robustez desejada.
+             # Vamos tentar mesmo assim, mas o prompt pode ser menos eficaz.
+
+        # Prompt específico para verificar a intenção
+        intent_prompt = f"""Contexto: O assistente perguntou ao cliente: "{previous_question}"
+Resposta do Cliente: "{user_input}"
+
+A resposta do cliente indica uma confirmação positiva (sim, correto, pode finalizar, etc.)?
+Responda APENAS 'sim' ou 'não'."""
+
+        logging.info(f"Verificando intenção de confirmação para: '{user_input}'")
+
+        payload = {
+            "model": self.model_name,
+            "prompt": intent_prompt,
+            "stream": False,
+            "options": {
+                "temperature": 0.1, # Temperatura baixa para resposta direta
+                # Não precisa de 'stop' aqui, pois esperamos resposta curta
+            }
+        }
+        headers = {'Content-Type': 'application/json'}
+
+        try:
+            response = requests.post(self.ollama_url, headers=headers, data=json.dumps(payload), timeout=self.timeout / 2) # Timeout menor para esta chamada rápida
+            response.raise_for_status()
+            response_data = response.json()
+            intent_result = response_data.get('response', '').strip().lower()
+
+            # Valida se a resposta é estritamente 'sim' ou 'não'
+            if intent_result == 'sim' or intent_result == 'não':
+                logging.info(f"Intenção detectada: '{intent_result}'")
+                return intent_result
+            else:
+                logging.warning(f"Resposta inesperada do LLM para verificação de intenção: '{intent_result}'. Tratando como 'não'.")
+                return "não" # Ou retornar "" para indicar incerteza
+
+        except requests.exceptions.Timeout:
+            logging.error(f"Timeout ao verificar intenção de confirmação com Ollama.")
+            return "" # Retorna vazio em caso de erro
+        except requests.exceptions.RequestException as e:
+            logging.exception(f"Erro de rede/HTTP ao verificar intenção de confirmação: {e}")
+            return "" # Retorna vazio em caso de erro
+        except json.JSONDecodeError:
+             logging.exception(f"Erro ao decodificar JSON da verificação de intenção: {response.text}")
+             return "" # Retorna vazio em caso de erro
+        except Exception as e:
+            logging.exception("Erro inesperado ao verificar intenção de confirmação.")
+            return "" # Retorna vazio em caso de erro

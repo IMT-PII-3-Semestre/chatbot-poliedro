@@ -152,15 +152,26 @@ def chat():
     user_input_cleaned = user_input.lower().strip().rstrip('.,!')
     is_user_confirming = user_input_cleaned in CONFIRMATION_WORDS
     last_bot_asked_confirmation = last_bot_message.strip().endswith("Correto?")
+    user_confirmed_intent = False # Valor padrão
 
-    # logging.info(f"Input usuário: '{user_input}', Limpo: '{user_input_cleaned}', Confirmando: {is_user_confirming}") # Log de debug removido
-    # logging.info(f"Sessão - Última msg bot terminou com 'Correto?': {last_bot_asked_confirmation}") # Log de debug removido
+    if last_bot_asked_confirmation:
+        try:
+            # Chama a nova função para verificar a intenção via LLM
+            confirmation_check_response = llm_integration.check_confirmation_intent(user_input, last_bot_message)
+            if confirmation_check_response.strip().lower() == 'sim':
+                user_confirmed_intent = True
+        except Exception as intent_err:
+            logging.error(f"Erro ao verificar intenção de confirmação com LLM: {intent_err}")
+            # Decide o que fazer em caso de erro - talvez chamar o LLM normalmente? Ou dar erro?
+            # Por segurança, manter False pode ser melhor para evitar finalizações erradas.
+            user_confirmed_intent = False
 
     final_response_data = {"response": None}
 
     # --- LÓGICA DE FINALIZAÇÃO PELO BACKEND ---
-    if is_user_confirming and last_bot_asked_confirmation:
-        logging.info("Usuário confirmou pedido. Iniciando finalização pelo backend.")
+    # Agora usa a intenção verificada pelo LLM
+    if user_confirmed_intent and last_bot_asked_confirmation:
+        logging.info("Usuário confirmou pedido (intenção detectada via LLM). Iniciando finalização pelo backend.")
         try:
             # Regex ajustado para capturar a lista entre "Você pediu:" e "Correto?"
             match = re.search(r'Entendido\.\s*Você\s+pediu:\s*(.*?)\s*Correto\?', last_bot_message, re.IGNORECASE | re.DOTALL)

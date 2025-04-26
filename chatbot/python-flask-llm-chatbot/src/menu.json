@@ -13,5 +13,20 @@
         "id": "item_2",
         "name": "Refrigerante Lata",
         "price": 5.0
+    },
+    {
+        "id": "item_3",
+        "name": "Cheeseburger",
+        "price": 17.0
+    },
+    {
+        "id": "item_4",
+        "name": "Suco de Laranja",
+        "price": 7.5
+    },
+    {
+        "id": "item_5",
+        "name": "Água Mineral",
+        "price": 3.0
     }
 ]

@@ -170,41 +170,74 @@ class ChatbotHandler:
         e determina as ações a serem tomadas no carrinho e na conversa.
         """
         output = {
-            "llm_response": "Desculpe, não consegui processar sua solicitação.",
+            "llm_response": "Desculpe, não consegui processar sua solicitação.", # Default
             "action": "none",
             "cart_updated": list(current_cart)
         }
 
         try:
+            # Obter a resposta do LLM
             llm_response_text = self.llm_integration.generate_response(user_input, conversation_history)
-            output["llm_response"] = llm_response_text
+            
+            # Definir a resposta do LLM como padrão, pode ser sobrescrita abaixo
+            output["llm_response"] = llm_response_text 
 
+            # 1. Verificar se o LLM está pedindo confirmação
             if "Você pediu:" in llm_response_text and llm_response_text.strip().endswith("Correto?"):
-                logging.info("LLM gerou uma mensagem de confirmação.")
-                validated_items = self._parse_and_validate_items_from_llm_response(llm_response_text, menu_data)
+                logging.info(f"LLM gerou uma mensagem de confirmação: '{llm_response_text}'")
+                # Parsear itens da resposta ORIGINAL do LLM para entender o que ele listou
+                validated_items_from_llm = self._parse_and_validate_items_from_llm_response(llm_response_text, menu_data)
                 
-                if validated_items:
-                    output["cart_updated"] = self.update_cart_from_validated(list(current_cart), validated_items)
+                if validated_items_from_llm:
+                    # Atualizar o carrinho com base nos itens que o LLM listou
+                    output["cart_updated"] = self.update_cart_from_validated(list(current_cart), validated_items_from_llm)
                     output["action"] = "needs_confirmation"
-                    logging.info(f"Itens para confirmação: {validated_items}. Carrinho atualizado para: {output['cart_updated']}")
+                    
+                    # Gerar a string detalhada dos itens do carrinho ATUALIZADO para a confirmação
+                    # Usamos for_confirmation=False para obter o formato detalhado com preços
+                    detailed_items_string, _ = self.format_order_details(
+                        output["cart_updated"], # Carrinho que reflete o que o LLM entendeu
+                        menu_data, 
+                        include_total=True,    # Inclui o "Total: R$ ZZ.ZZ"
+                        for_confirmation=False # Formato: "- Quantidade x Nome (Preço cada) = Subtotal"
+                    )
+                    
+                    # Construir a nova mensagem de confirmação formatada
+                    formatted_confirmation_message = f"Entendido. Você pediu:\n{detailed_items_string}\nCorreto?"
+                    output["llm_response"] = formatted_confirmation_message # Sobrescreve a resposta do LLM
+                    
+                    logging.info(f"Itens para confirmação (reformatados): {output['cart_updated']}. Mensagem enviada ao usuário: {output['llm_response']}")
                 else:
-                    logging.warning("LLM pediu confirmação, mas nenhum item válido foi parseado da sua resposta.")
-                    output["action"] = "none"
+                    # LLM tentou confirmar, mas não conseguimos parsear itens válidos da sua resposta.
+                    # Mantém a resposta original do LLM e não define ação de confirmação.
+                    logging.warning("LLM pediu confirmação, mas nenhum item válido foi parseado. Usando resposta original do LLM.")
+                    # A ação permanece "none" ou a resposta do LLM pode levar a outro fluxo.
+                    # Se output["llm_response"] já foi setado com llm_response_text, está ok.
 
+            # 2. Verificar se o LLM finalizou o pedido
             elif "pedido foi anotado e enviado para a cozinha" in llm_response_text:
                 logging.info("LLM gerou uma mensagem de finalização de pedido.")
                 output["action"] = "finalize_order_confirmed"
+                # output["llm_response"] já é a mensagem de finalização do LLM.
 
+            # 3. Verificar se o LLM indicou limpeza do carrinho
             elif "carrinho foi esvaziado" in llm_response_text.lower() or \
                  "itens foram removidos do seu carrinho" in llm_response_text.lower() or \
                  "seu carrinho está vazio agora" in llm_response_text.lower():
                 logging.info("LLM indicou que o carrinho foi/deve ser limpo.")
                 output["action"] = "clear_cart"
                 output["cart_updated"] = []
+                # output["llm_response"] já é a mensagem do LLM sobre o carrinho vazio.
             
+            # Se nenhuma ação específica foi detectada, output["llm_response"] já contém llm_response_text.
+
         except Exception as e:
             logging.exception(f"Erro em ChatbotHandler.process_input: {e}")
             output["llm_response"] = "Desculpe, ocorreu um erro interno ao falar com o assistente."
-            output["cart_updated"] = list(current_cart) 
+            output["cart_updated"] = list(current_cart) # Garante que o carrinho não seja corrompido
         
+        # Garantir que sempre há uma resposta do LLM no output, mesmo que seja a de erro padrão.
+        if output.get("llm_response") is None:
+             output["llm_response"] = "Desculpe, não consegui processar sua solicitação."
+
         return output

@@ -198,13 +198,13 @@ body {
 .message-wrapper.bot .message { /* Estilo específico para bolha do bot */
     background-color: #ffffff;
     color: #333;
-    border-bottom-left-radius: 5px; /* Quebra o arredondamento para a cauda */
+    border-bottom-left-radius: 0px; /* Quebra o arredondamento para a cauda */
 }
 
 .message-wrapper.user .message { /* Estilo específico para bolha do usuário */
     background-color: #5C67E0; /* Cor principal */
     color: #ffffff;
-    border-bottom-right-radius: 5px; /* Quebra o arredondamento para a cauda */
+    border-bottom-right-radius: 0px; /* Quebra o arredondamento para a cauda */
 }
 
 /* Pseudo-elemento para criar a "cauda" da bolha */

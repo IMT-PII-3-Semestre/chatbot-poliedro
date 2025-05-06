@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Função Principal: Chamar API do Backend ---
     async function callChatAPI(userMessage) {
-        const apiUrl = '/chat'; // URL relativa
+        const apiUrl = 'http://127.0.0.1:5000/chat'; // URL absoluta para o backend Flask
 
         // MOSTRA o indicador ANTES de chamar a API
         showLoadingIndicator();

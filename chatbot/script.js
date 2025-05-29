@@ -157,12 +157,29 @@ document.addEventListener('DOMContentLoaded', () => {
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
+    // --- Funções para Indicador de "Digitando" no Botão ---
+
+    /** Mostra o indicador de "digitando" no botão */
+    function showTypingIndicator() {
+        sendButton.classList.add('typing');
+        sendButton.disabled = true; // Desabilita o botão
+        userInput.disabled = true; // Opcional: desabilitar input também
+    }
+
+    /** Esconde o indicador de "digitando" no botão */
+    function hideTypingIndicator() {
+        sendButton.classList.remove('typing');
+        sendButton.disabled = false; // Habilita o botão
+        userInput.disabled = false; // Opcional: habilitar input também
+    }
+
     // --- Função Principal: Chamar API do Backend ---
     async function callChatAPI(userMessage) {
         const apiUrl = 'http://127.0.0.1:5000/chat'; // URL absoluta para o backend Flask
 
         // MOSTRA o indicador ANTES de chamar a API
         showLoadingIndicator();
+        showTypingIndicator();
 
         try {
             const response = await fetch(apiUrl, {
@@ -176,6 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // ESCONDE o indicador ANTES de processar a resposta (ok ou erro)
             hideLoadingIndicator();
+            hideTypingIndicator();
 
             if (!response.ok) {
                 let errorMsg = `Erro HTTP ${response.status} ${response.statusText}`;
@@ -245,6 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             // ESCONDE o indicador também em caso de erro geral de fetch
             hideLoadingIndicator();
+            hideTypingIndicator();
             console.error('Erro geral ao chamar a API:', error);
             addMessage("Desculpe, ocorreu um erro ao conectar com o servidor. Verifique sua conexão ou tente mais tarde.", 'bot');
         }

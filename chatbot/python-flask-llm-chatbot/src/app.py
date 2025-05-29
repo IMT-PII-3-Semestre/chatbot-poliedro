@@ -5,6 +5,9 @@ from decimal import Decimal, InvalidOperation
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from dotenv import load_dotenv
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure, OperationFailure
+import datetime
 
 from chatbot.handler import ChatbotHandler
 from llm.integration import LLMIntegration
@@ -27,6 +30,7 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "mistral")
 OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", 60))
 OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", 0.5))
 MENU_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'menu.json')
+MONGODB_URI = os.getenv("MONGODB_URI")
 
 # --- Inicialização dos Componentes ---
 llm_integration = None
@@ -42,6 +46,27 @@ try:
     logging.info(f"Integração LLM inicializada com sucesso para o modelo '{OLLAMA_MODEL}'.")
 except Exception as e:
     logging.exception("Erro fatal durante a inicialização dos componentes.")
+
+# --- Configuração do MongoDB ---
+mongo_client = None
+db = None
+orders_collection = None
+if MONGODB_URI:
+    try:
+        mongo_client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+        # Test the connection
+        mongo_client.admin.command('ping')
+        db = mongo_client.get_database("poliedro_chatbot_db") # Ou o nome do seu banco de dados
+        orders_collection = db.get_collection("orders")
+        logging.info("Conexão com MongoDB estabelecida com sucesso.")
+    except ConnectionFailure:
+        logging.error("Falha ao conectar ao MongoDB: Verifique a URI de conexão e a disponibilidade do servidor.")
+        mongo_client = None # Garante que não tentaremos usar um cliente inválido
+    except Exception as e:
+        logging.exception(f"Erro inesperado ao configurar MongoDB: {e}")
+        mongo_client = None
+else:
+    logging.warning("MONGODB_URI não configurada. A integração com MongoDB está desabilitada.")
 
 # --- Função Auxiliar: Carregar Cardápio ---
 def load_menu_data():
@@ -147,15 +172,30 @@ def chat():
                     session['cart'], current_menu_data, include_total=True, for_confirmation=False
                 )
                 final_response_data["response"] = "Ótimo! Seu pedido foi anotado e enviado para a cozinha!"
-                final_response_data['final_order'] = {
+                final_order_payload = {
                     "items": list(session['cart']),
-                    "total": str(total_calculated), 
-                    "order_details_text": order_details_text
+                    "total": str(total_calculated),
+                    "order_details_text": order_details_text,
+                    "timestamp": datetime.datetime.utcnow(),
+                    "status": "Pendente" # Status inicial do pedido
                 }
-                logging.info(f"Pedido finalizado via botão 'Sim': {session['cart']}")
-                session['cart'] = []
-                session['conversation_history'] = [] 
-                session['last_bot_message'] = ""
+                final_response_data['final_order'] = final_order_payload
+
+                if orders_collection:
+                    try:
+                        insert_result = orders_collection.insert_one(final_order_payload)
+                        logging.info(f"Pedido finalizado e salvo no MongoDB com ID: {insert_result.inserted_id}")
+                    except OperationFailure as e:
+                        logging.error(f"Falha ao salvar pedido no MongoDB: {e.details}")
+                    except Exception as e:
+                        logging.exception("Erro inesperado ao salvar pedido no MongoDB.")
+                else:
+                    logging.warning("MongoDB não configurado. Pedido não foi salvo no banco de dados.")
+
+            logging.info(f"Pedido finalizado via botão 'Sim': {session['cart']}")
+            session['cart'] = []
+            session['conversation_history'] = [] 
+            session['last_bot_message'] = ""
         else: 
             final_response_data["response"] = "Entendido. O que você gostaria de alterar ou adicionar?"
         
@@ -184,11 +224,26 @@ def chat():
                     order_details_text, total_calculated = chatbot_handler.format_order_details(
                         session['cart'], current_menu_data, include_total=True, for_confirmation=False
                     )
-                    final_response_data['final_order'] = {
+                    final_order_payload = {
                         "items": list(session['cart']),
                         "total": str(total_calculated),
-                        "order_details_text": order_details_text
+                        "order_details_text": order_details_text,
+                        "timestamp": datetime.datetime.utcnow(),
+                        "status": "Pendente" # Status inicial do pedido
                     }
+                    final_response_data['final_order'] = final_order_payload
+
+                    if orders_collection:
+                        try:
+                            insert_result = orders_collection.insert_one(final_order_payload)
+                            logging.info(f"Pedido (confirmado pelo LLM) salvo no MongoDB com ID: {insert_result.inserted_id}")
+                        except OperationFailure as e:
+                            logging.error(f"Falha ao salvar pedido (confirmado pelo LLM) no MongoDB: {e.details}")
+                        except Exception as e:
+                            logging.exception("Erro inesperado ao salvar pedido (confirmado pelo LLM) no MongoDB.")
+                    else:
+                        logging.warning("MongoDB não configurado. Pedido (confirmado pelo LLM) não foi salvo no banco de dados.")
+
                     logging.info(f"Pedido finalizado (confirmado pelo LLM via handler): {session['cart']}")
                     session['cart'] = []
                     session['conversation_history'] = []

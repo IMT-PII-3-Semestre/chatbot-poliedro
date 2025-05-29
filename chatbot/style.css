@@ -255,34 +255,45 @@ body {
 /* Container para botões dentro de uma mensagem */
 .chat-button-container {
     display: flex;
+    gap: 10px; /* Espaço entre os botões */
+    margin-top: 10px; /* Espaço acima dos botões */
+    justify-content: flex-start; /* Alinha botões à esquerda para o bot */
+}
+
+.message-wrapper.user .chat-button-container {
+    justify-content: flex-end; /* Alinha botões à direita para o usuário, se aplicável */
+=======
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 10px;
 }
 
 .chat-button { /* Estilo dos botões dentro das mensagens */
-    display: inline-block;
-    background-color: #5c67e0;
-    color: white;
-    padding: 8px 16px;
+    padding: 8px 15px;
     border: none;
     border-radius: 18px;
+    background-color: #5C67E0; /* Cor principal */
+    color: white;
+=======
     cursor: pointer;
     font-size: 0.9em;
-    font-weight: 500;
-    transition: all 0.2s ease-in-out;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: background-color 0.2s ease;
 }
+
 .chat-button:hover {
+    background-color: #4a56c0; /* Cor mais escura no hover */
+=======
     background-color: #4a56c0;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
-.chat-button.cancel { /* Estilo para botão de cancelar */
-    background-color: #e74c3c;
+
+.chat-button.cancel { /* Estilo específico para o botão "Não" ou de cancelamento */
+    background-color: #e74c3c; /* Vermelho */
 }
+
 .chat-button.cancel:hover {
-    background-color: #c0392b;
+    background-color: #c0392b; /* Vermelho mais escuro */
 }
 
 .input-area {

@@ -58,10 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const messageElement = document.createElement('div');
         messageElement.classList.add('message');
-        // Substitui \n por <br> para mensagens do bot para renderizar quebras de linha
         messageElement.innerHTML = sender === 'bot' ? text.replace(/\n/g, '<br>') : text;
 
         messageContent.appendChild(messageElement);
+
+        // Adiciona botões de Sim/Não se for uma pergunta de confirmação do bot
+        if (sender === 'bot' && text.trim().endsWith("Correto?")) {
+            addConfirmationButtons(messageContent);
+        }
 
         // Ordem diferente para usuário e bot
         if (sender === 'bot') {
@@ -74,6 +78,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
         chatBox.appendChild(messageWrapper);
         scrollToBottom();
+    }
+
+    /** Adiciona botões de Sim/Não para confirmação */
+    function addConfirmationButtons(parentContainer) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.classList.add('chat-button-container'); // Estilo definido anteriormente ou novo
+
+        const yesButton = document.createElement('button');
+        yesButton.classList.add('chat-button');
+        yesButton.textContent = 'Sim';
+        yesButton.addEventListener('click', () => {
+            addMessage('Sim', 'user'); // Mostra a escolha do usuário
+            callChatAPI('sim');       // Envia "sim" para o backend
+            removeConfirmationButtons(parentContainer);
+        });
+
+        const noButton = document.createElement('button');
+        noButton.classList.add('chat-button', 'cancel'); // Estilo opcional para 'Não'
+        noButton.textContent = 'Não';
+        noButton.addEventListener('click', () => {
+            addMessage('Não', 'user'); // Mostra a escolha do usuário
+            callChatAPI('não');      // Envia "não" para o backend
+            removeConfirmationButtons(parentContainer);
+        });
+
+        buttonContainer.appendChild(yesButton);
+        buttonContainer.appendChild(noButton);
+        parentContainer.appendChild(buttonContainer);
+    }
+
+    /** Remove os botões de confirmação após o clique */
+    function removeConfirmationButtons(parentContainer) {
+        const buttonContainer = parentContainer.querySelector('.chat-button-container');
+        if (buttonContainer) {
+            buttonContainer.remove();
+        }
     }
 
     /** Mostra o indicador de "digitando" */
@@ -135,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Função Principal: Chamar API do Backend ---
     async function callChatAPI(userMessage) {
-        const apiUrl = 'http://127.0.0.1:5000/chat'; // URL do backend Flask
+        const apiUrl = 'http://127.0.0.1:5000/chat'; // URL absoluta para o backend Flask
 
         // MOSTRA o indicador ANTES de chamar a API
         showLoadingIndicator();
@@ -156,12 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
             hideTypingIndicator();
 
             if (!response.ok) {
-                // Tenta ler a mensagem de erro do backend, se houver
                 let errorMsg = `Erro HTTP ${response.status} ${response.statusText}`;
                 try {
                     const errorData = await response.json();
                     if (errorData && errorData.error) {
                         errorMsg += `: ${errorData.error}`;
+                    } else if (errorData && errorData.response) { // Captura erro vindo do "response"
+                        errorMsg += `: ${errorData.response}`;
                     }
                 } catch (e) { /* Ignora erro ao parsear JSON de erro */ }
                 console.error('Erro na API:', errorMsg);
@@ -176,90 +217,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 addMessage(botResponseText, 'bot'); // Exibe a resposta do bot
 
                 // --- LÓGICA PARA SALVAR PEDIDO FINALIZADO NO KDS ---
-                // Verifica se a resposta contém a frase de finalização E os detalhes
-                const finalizationPhrase = "Seu pedido foi enviado para a cozinha!";
-                const hasDetails = botResponseText.includes("Total: R$") && botResponseText.includes("Pedido anotado:");
+                // Prioriza o objeto 'final_order' se existir
+                if (data.final_order && data.final_order.items && data.final_order.items.length > 0) {
+                    console.log("Pedido finalizado recebido com dados estruturados:", data.final_order);
+                    
+                    const kdsItems = data.final_order.items.map(item => ({
+                        name: item.name, // Nome já deve estar no formato correto
+                        quantity: item.quantity,
+                        // price: item.price // Adicionar se o KDS precisar do preço unitário
+                    }));
 
-                if (botResponseText.includes(finalizationPhrase) && hasDetails) {
-                    // console.log(">>> FINALIZAÇÃO DETECTADA COM DETALHES <<<"); // Log de debug removido
-
-                    const orderId = generateOrderId();
-                    let items = [];
-                    let total = null;
-
-                    // Extrai itens e total da MENSAGEM FINAL recebida do backend
-                    try {
-                        const itemsMatch = botResponseText.match(/Pedido anotado:(.*?)\. Total:/);
-                        const totalMatch = botResponseText.match(/Total: R\$\s*([\d,.]+)/);
-
-                        if (totalMatch && totalMatch[1]) {
-                            total = parseFloat(totalMatch[1].replace('.', '').replace(',', '.')); // Trata milhares e decimal
-                        }
-
-                        if (itemsMatch && itemsMatch[1]) {
-                            const itemsString = itemsMatch[1].trim();
-                            // Regex para dividir itens, considerando "Nx " opcional
-                            const itemParts = itemsString.split(/,\s*(?=(?:\d+\s*x\s+)?\S)|\s+e\s+(?=(?:\d+\s*x\s+)?\S)/);
-
-                            items = itemParts.map(part => {
-                                part = part.trim();
-                                const match = part.match(/^(?:(\d+)\s*x\s+)?(.+)$/i);
-                                if (match) {
-                                    const quantity = match[1] ? parseInt(match[1], 10) : 1;
-                                    const name = match[2].trim();
-                                    // Remove possível "(Preço não encontrado)" adicionado pelo backend
-                                    const cleanedName = name.replace(/\s*\(Preço não encontrado\)$/i, '').trim();
-                                    return { name: cleanedName, quantity: quantity };
-                                }
-                                return null; // Ignora partes que não casam com o padrão
-                            }).filter(item => item !== null && item.name); // Filtra nulos e itens sem nome
-
-                            if (items.length === 0) {
-                                 console.warn("Finalização detectada, mas não foi possível parsear itens da string:", itemsString);
-                                 items = [{ name: "Pedido confirmado (detalhes indisponíveis)", quantity: 1 }]; // Fallback
-                            }
-                        } else {
-                             console.warn("Finalização detectada, mas regex de itens não encontrou padrão.");
-                             items = [{ name: "Pedido confirmado (detalhes indisponíveis)", quantity: 1 }]; // Fallback
-                        }
-                    } catch (parseError) {
-                         console.error("Erro ao parsear detalhes do pedido finalizado:", parseError);
-                         items = [{ name: "Pedido confirmado (erro ao parsear)", quantity: 1 }]; // Fallback
-                         total = null;
-                    }
-
-                    // Monta os dados para salvar no KDS
-                    const orderData = {
-                        id: orderId,
-                        items: items,
-                        total: total, // Pode ser null se não foi parseado
+                    const orderDataForKDS = {
+                        id: generateOrderId(),
+                        items: kdsItems,
+                        total: data.final_order.total ? parseFloat(data.final_order.total) : null,
                         timestamp: new Date().toISOString(),
-                        status: 'Pendente' // Status inicial
+                        status: 'Pendente',
+                        orderDetailsText: data.final_order.order_details_text // Texto formatado do pedido
                     };
-
-                    console.log("Dados do pedido finalizado a serem salvos no KDS:", orderData);
-                    saveOrderToKitchen(orderData);
-
-                } else if (botResponseText.includes(finalizationPhrase)) {
-                    // Finalizou, mas sem detalhes (talvez erro no backend ou fallback)
-                    console.warn("Finalização detectada, mas SEM detalhes parseáveis na resposta.");
-                    // Salva um pedido genérico para indicar que algo foi finalizado
+                    saveOrderToKitchen(orderDataForKDS);
+                }
+                // Fallback: Se final_order não existir, mas a frase de finalização estiver presente
+                // (Isso pode acontecer se a finalização ocorrer por um fluxo antigo ou erro no backend ao montar final_order)
+                else if (botResponseText.includes("Seu pedido foi anotado e enviado para a cozinha!")) {
+                    console.warn("Finalização detectada, mas 'final_order' não disponível ou vazio. Usando fallback para KDS.");
                     saveOrderToKitchen({
                         id: generateOrderId(),
-                        items: [{ name: "Pedido confirmado (sem detalhes)", quantity: 1 }],
-                        total: null,
+                        items: [{ name: "Pedido confirmado (detalhes via texto)", quantity: 1 }],
+                        total: null, // Não temos o total estruturado neste caso
                         timestamp: new Date().toISOString(),
-                        status: 'Pendente'
+                        status: 'Pendente',
+                        orderDetailsText: botResponseText // Salva a resposta completa do bot
                     });
                 }
                 // --- FIM DA LÓGICA DE FINALIZAÇÃO ---
 
             } else if (data && data.error) {
-                 // Se o backend retornou um erro JSON conhecido
                  console.error("Erro retornado pela API:", data.error);
                  addMessage(`😕 Erro do servidor: ${data.error}`, 'bot');
             } else {
-                 // Resposta inesperada ou vazia
                  console.error("Resposta inválida ou vazia recebida da API:", data);
                  addMessage("Desculpe, não recebi uma resposta válida do servidor.", 'bot');
             }

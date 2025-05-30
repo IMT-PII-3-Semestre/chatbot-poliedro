@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatBox = document.getElementById('chat-box');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
+    const newChatButton = document.getElementById('new-chat-button');
 
     // Chave para armazenar pedidos pendentes no KDS
     const KDS_STORAGE_KEY = 'pedidosCozinhaPendentes';
@@ -280,6 +281,16 @@ document.addEventListener('DOMContentLoaded', () => {
         userInput.focus();
     }
 
+    /** Inicia uma nova conversa, limpando o histórico e reiniciando a sessão */
+    function startNewChat() {
+        chatMessages.innerHTML = ''; // Limpa mensagens da tela
+        currentCart = []; // Limpa o carrinho local
+        updateCartDisplay(); // Atualiza a exibição do carrinho (para esvaziar)
+        appendMessage('bot', 'Olá! Sou o assistente virtual do Restaurante Poliedro. 👋<br>Como posso ajudar você hoje?');
+        chatInput.focus();
+        logging.info("Nova sessão de chat iniciada.");
+    }
+
     // --- Event Listeners ---
     sendButton.addEventListener('click', handleSend);
     userInput.addEventListener('keypress', (event) => {
@@ -287,6 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
             handleSend();
         }
     });
+    newChatButton.addEventListener('click', startNewChat);
 
     /** Inicia a conversa com mensagens de boas-vindas */
     function startChat() {

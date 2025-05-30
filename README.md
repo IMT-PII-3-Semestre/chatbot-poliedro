@@ -1,4 +1,4 @@
-# </div><p align="center">🤖 Chatbot Poliedro 🤖</p>
+# 🤖 Chatbot Poliedro 🤖
 
 Bem-vindo ao repositório do **Chatbot Poliedro**, um projeto interdisciplinar desenvolvido por alunos do 3º semestre do curso de Ciências da Computação do Instituto Mauá de Tecnologia. Este sistema visa otimizar o atendimento nos restaurantes das escolas Poliedro, reduzindo filas e aprimorando a comunicação entre clientes e cozinha.
 
@@ -45,10 +45,13 @@ Para complementar, um sistema KDS (Kitchen Display System) foi integrado para qu
 -   **Flask-CORS**: Middleware para habilitar requisições Cross-Origin Resource Sharing (CORS).
 -   **Requests**: Biblioteca para realizar chamadas HTTP para a API do LLM ([`chatbot/python-flask-llm-chatbot/src/llm/integration.py`](chatbot/python-flask-llm-chatbot/src/llm/integration.py)).
 -   **Ollama**: Plataforma externa para execução local de Modelos de Linguagem Grandes (LLMs).
+-   **python-dotenv**: Para gerenciamento de variáveis de ambiente.
+-   **pymongo**: Biblioteca Python para interagir com o MongoDB.
+-   **pytz**: Para manipulação de fusos horários.
 
-### Banco de Dados (Planejado)
+### Banco de Dados
 
--   **MongoDB**: Previsto para armazenamento persistente de dados (atualmente não implementado).
+-   **MongoDB**: Utilizado para armazenamento persistente do cardápio (menu) e dos pedidos dos clientes.
 
 ---
 
@@ -57,51 +60,70 @@ Para complementar, um sistema KDS (Kitchen Display System) foi integrado para qu
 ### Pré-requisitos
 
 -   Git ([https://git-scm.com/](https://git-scm.com/))
--   Python 3 ([https://www.python.org/](https://www.python.org/))
+-   Python 3.10 ou superior ([https://www.python.org/](https://www.python.org/))
 -   Ollama ([https://ollama.com/](https://ollama.com/))
+-   MongoDB (Instância local ou um serviço na nuvem como MongoDB Atlas - [https://www.mongodb.com/](https://www.mongodb.com/))
 
 ### Passos
 
-1.  **Clone o repositório:**
+1.  **Prepare o Ollama:**
+    Certifique-se de que o Ollama está instalado e em execução em sua máquina. Baixe o modelo LLM que será utilizado (o padrão configurado no projeto é `mistral`, mas você pode alterá-lo no arquivo `.env`):
+    ```bash
+    ollama pull mistral
+    ```
+
+2.  **Clone o repositório:**
     ```bash
     git clone <https://github.com/IMT-PII-3-Semestre/chatbot-poliedro>
     cd chatbot-poliedro
     ```
 
-2.  **Configure o Backend:**
-    *   Navegue até o diretório do backend:
-        ```bash
+3.  **Configure o Backend (Servidor Flask):**
+
+    Navegue até o diretório do backend:
+    
+       ```bash
         cd chatbot/python-flask-llm-chatbot
-        ```
-    *   Crie e ative um ambiente virtual:
-        ```bash
-        # Criar (apenas uma vez)
-        python -m venv venv
-        # Ativar (Windows)
-        venv\Scripts\activate
-        # Ativar (macOS/Linux)
-        source venv/bin/activate
-        ```
-    *   Instale as dependências Python:
-        ```bash
+       ```
+    
+    Crie e ative um ambiente virtual (altamente recomendado):
+       
+       ```bash
+        python -m venv .venv
+       ```
+       No Windows:
+       ```bash
+        .venv\Scripts\activate
+       ```
+       No macOS/Linux:
+       ```bash
+        source .venv/bin/activate
+       ```
+    Instale as dependências do backend:
+
+       ```bash
         pip install -r requirements.txt
-        ```
-    *   Baixe o modelo LLM via Ollama:
-        ```bash
-        ollama pull mistral
-        ```
-        *(O modelo padrão é `mistral`, configurado em `src/app.py`. O backend espera que o Ollama esteja acessível em `http://localhost:11434`)*
+       ```
 
-3.  **Execute o Backend:**
-    *   Ainda no diretório `chatbot/python-flask-llm-chatbot` e com o ambiente virtual ativado:
-        ```bash
+4.    **Configure as variáveis de ambiente:**
+
+       Na raiz do diretório `chatbot/python-flask-llm-chatbot`, você encontrará um arquivo chamado `.env`.
+
+        Abra este arquivo `.env` e edite-o, substituindo os valores de placeholder (especialmente para `MONGODB_URI` e `FLASK_SECRET_KEY`) pelos seus dados reais. O arquivo já contém comentários explicando cada variável.
+
+       **Importante:** Certifique-se de que o arquivo `.env` com suas credenciais reais **não seja** commitado no repositório se ele for público. O arquivo `.env` no repositório deve servir apenas como um template.
+
+      Execute o servidor Flask (ainda dentro de `chatbot/python-flask-llm-chatbot`):
+       ```bash
         python src/app.py
-        ```
-    *   O servidor Flask iniciará (geralmente em `http://localhost:5000`).
+       ```
+       O servidor backend estará rodando, por padrão, em `http://127.0.0.1:5000`.
 
-4.  **Acesse o Frontend:**
-    *   Abra o arquivo [`chatbot/index.html`](chatbot/index.html) diretamente no seu navegador. Ele se conectará automaticamente ao backend em execução.
-    *   O painel KDS(Kitchen Display System) pode ser acessado abrindo [`chatbot/kds.html`](chatbot/kds.html).
+4.  **Acesse o Frontend (Chat e KDS):**
+   
+    Para a interface do Chat, abra o arquivo `chatbot/index.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/index.html`) em seu navegador.
+
+    Para o painel KDS/Admin, abra o arquivo `chatbot/kds.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/kds.html`) em seu navegador.
 
 ---
 

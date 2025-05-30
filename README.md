@@ -96,28 +96,17 @@ Para complementar, um sistema KDS (Kitchen Display System) foi integrado para qu
         source .venv/bin/activate
         ```
     c.  Instale as dependências do backend:
+
         ```bash
         pip install -r requirements.txt
         ```
+
     d.  **Configure as variáveis de ambiente:**
-        Na raiz do diretório `chatbot/python-flask-llm-chatbot` (onde o `requirements.txt` está localizado), crie um arquivo chamado `.env`. Copie o conteúdo abaixo para este arquivo e substitua os valores de placeholder pelos seus dados reais:
-        ```env
-        # Conteúdo para .env
-        MONGODB_URI="mongodb+srv://<username>:<password>@<cluster-url>/<database-name>?retryWrites=true&w=majority"
-        FLASK_SECRET_KEY="uma_string_aleatoria_e_longa_para_seguranca_da_sessao_flask"
-        FLASK_DEBUG=True
-        OLLAMA_URL="http://localhost:11434/api/generate"
-        OLLAMA_MODEL="mistral" 
-        OLLAMA_TIMEOUT=60
-        OLLAMA_TEMPERATURE=0.5
-        ```
-        -   **`MONGODB_URI`**: Sua string de conexão completa para o banco de dados MongoDB.
-        -   **`FLASK_SECRET_KEY`**: Uma chave secreta forte e única para proteger as sessões do Flask.
-        -   **`FLASK_DEBUG`**: Defina como `True` para habilitar o modo de depuração do Flask durante o desenvolvimento. Mude para `False` em um ambiente de produção.
-        -   **`OLLAMA_URL`**: A URL base da sua API Ollama.
-        -   **`OLLAMA_MODEL`**: O nome do modelo LLM que o Ollama deve usar (deve estar previamente baixado no Ollama).
-        -   **`OLLAMA_TIMEOUT`**: Tempo máximo de espera (em segundos) para respostas da API Ollama.
-        -   **`OLLAMA_TEMPERATURE`**: Controla a criatividade/aleatoriedade da resposta do LLM (valores típicos entre 0.2 e 0.8).
+
+        Na raiz do diretório `chatbot/python-flask-llm-chatbot`, você encontrará um arquivo chamado `.env`.
+        **Abra este arquivo `.env` e edite-o**, substituindo os valores de placeholder (especialmente para `MONGODB_URI` e `FLASK_SECRET_KEY`) pelos seus dados reais. O arquivo já contém comentários explicando cada variável.
+
+        **Importante:** Certifique-se de que o arquivo `.env` com suas credenciais reais **não seja** commitado no repositório se ele for público. O arquivo `.env` no repositório deve servir apenas como um template.
 
     e.  Execute o servidor Flask (ainda dentro de `chatbot/python-flask-llm-chatbot`):
         ```bash

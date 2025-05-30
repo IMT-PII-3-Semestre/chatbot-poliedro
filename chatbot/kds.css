@@ -460,11 +460,6 @@ body {
     .form-section h2, .list-section h2 { /* Títulos de seção no Admin */
         font-size: 1.2em;
     }
-
-    /* Ajustes KDS para telas pequenas */
-    .kds-orders-container { /* Cards de pedido em uma coluna */
-       /* A largura dos cards (.kds-order-item) já os fará empilhar naturalmente com flex-wrap */
-    }
     .kds-order-item {
         width: 100%; /* Ocupa toda a largura disponível */
         padding: 12px 15px;

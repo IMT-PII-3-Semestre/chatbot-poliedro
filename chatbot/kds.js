@@ -87,9 +87,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${itemsHtml}
                 </div>
                 <div class="order-footer">
-                    <span class="order-status status-${order.status.toLowerCase()}">${order.status}</span>
-                    <button class="btn btn-kds-action btn-mark-preparando" data-id="${order._id}">Marcar Preparando</button>
-                    <button class="btn btn-kds-action btn-mark-pronto" data-id="${order._id}">Marcar Pronto</button>
+                    <span class="order-status status-${order.status.toLowerCase().replace(/\s+/g, '-')}">${order.status}</span>
+                    <div class="order-actions"> {/* Wrapper adicionado */}
+                        <button class="btn-kds-action btn-mark-preparando" data-id="${order._id}">Preparando</button> {/* Texto do botão alterado */}
+                        <button class="btn-kds-action btn-mark-pronto" data-id="${order._id}">Pronto</button> {/* Texto do botão alterado */}
+                    </div>
                 </div>
             `;
             fragment.appendChild(listItem);

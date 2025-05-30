@@ -169,41 +169,71 @@ body {
 
 .kds-order-item .order-footer {
     margin-top: auto; /* Empurra o rodapé para baixo */
-    padding-top: 10px;
+    padding-top: 15px; /* Aumentado para mais espaço */
     border-top: 1px solid #eee;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px; /* Adiciona espaço entre os elementos do rodapé */
 }
 
 .kds-order-item .order-status {
     font-weight: bold;
+    font-size: 0.95em; /* Ajuste de tamanho */
+    flex-shrink: 0; /* Evita que o status seja espremido */
 }
 .status-pendente { color: #ff9800; /* Laranja */ }
 .status-em_preparo { color: #2196f3; /* Azul */ } /* Se usar "Em Preparo" */
 .status-em-preparo { color: #2196f3; /* Azul */ } /* Se usar "Em-Preparo" */
 .status-pronto { color: #4caf50; /* Verde */ }
 
+/* Container para os botões de ação do KDS para melhor agrupamento */
+.kds-order-item .order-actions {
+    display: flex;
+    gap: 8px; /* Espaço entre os botões */
+}
+
 .btn-kds-action {
-    padding: 6px 10px;
-    font-size: 0.85em;
-    border-radius: 4px;
+    padding: 8px 12px; /* Aumenta o padding para melhor toque/clique */
+    font-size: 0.9em;  /* Tamanho de fonte consistente */
+    border-radius: 5px; /* Bordas levemente arredondadas */
     cursor: pointer;
     border: 1px solid transparent;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+    font-weight: 500;
+    display: inline-flex; /* Para alinhar ícone e texto se houver */
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-width: 110px; /* Largura mínima para consistência */
 }
+.btn-kds-action i { /* Se você adicionar ícones aos botões */
+    margin-right: 5px;
+}
+
 .btn-mark-preparando {
-    background-color: #2196f3;
+    background-color: #17a2b8; /* Azul info (Bootstrap-like) */
     color: white;
-    border-color: #1e88e5;
+    border-color: #17a2b8;
 }
+.btn-mark-preparando:hover {
+    background-color: #138496;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 .btn-mark-pronto {
-    background-color: #4caf50;
+    background-color: #28a745; /* Verde success (Bootstrap-like) */
     color: white;
-    border-color: #43a047;
+    border-color: #28a745;
 }
-.btn-kds-action:hover {
-    opacity: 0.9;
+.btn-mark-pronto:hover {
+    background-color: #218838;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+.btn-kds-action:active {
+    transform: translateY(1px); /* Efeito de clique */
+}
+
 
 /* --- Mensagem de Nenhum Pedido --- */
 .no-orders {

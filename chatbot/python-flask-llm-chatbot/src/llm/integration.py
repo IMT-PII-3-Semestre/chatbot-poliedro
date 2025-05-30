@@ -63,7 +63,7 @@ class LLMIntegration:
 
     def _is_menu_unavailable(self, menu_string):
         """Verifica se a string do menu indica que ele não está disponível ou houve erro."""
-        if menu_string is None: # Não deve acontecer com a lógica atual de _get_menu_string_from_db
+        if menu_string is None: # Não deve acontecer com a lógica atual de _get_menu_string_from_db, mas é uma verificação de segurança.
             return True
         return any(menu_string.startswith(prefix) for prefix in self.known_menu_error_prefixes)
 
@@ -77,7 +77,7 @@ class LLMIntegration:
         if self._is_menu_unavailable(menu_string):
             logging.warning("Falha ao carregar o menu ou menu vazio. Construindo prompt de erro para o LLM.")
             # Prompt de erro específico quando o menu não está disponível.
-            # Instruções para o LLM em inglês, mas exigindo resposta em português.
+            # Instruções para o LLM em inglês por ser a principal linguagem que são treinadas, mas exigindo resposta em português.
             base_prompt = """You are a virtual assistant for Poliedro Restaurant.
 ATTENTION: The menu could not be loaded or is empty.
 Your task is to politely inform the user that the menu is currently unavailable and you cannot take orders.

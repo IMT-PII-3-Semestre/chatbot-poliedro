@@ -1,474 +1,357 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Elementos DOM ---
+    const kdsView = document.getElementById('kds-view');
     const kdsOrdersList = document.getElementById('kds-orders-list');
-    const adminMenuTableBody = document.getElementById('menu-table-body');
-    const adminMenuForm = document.getElementById('menu-item-form');
-    const itemIdInput = document.getElementById('edit-item-id'); // Input oculto para ID do item em edição
-    const itemNameInput = document.getElementById('item-name');
-    const itemPriceInput = document.getElementById('item-price');
-    const saveButton = document.getElementById('save-button'); // Botão de salvar/adicionar
-    const cancelEditButton = document.getElementById('cancel-edit-button');
-    const formMessage = document.getElementById('form-message'); // Elemento para mensagens do formulário
-    const noMenuItemsRow = document.getElementById('no-menu-items-row'); // Linha da tabela para "nenhum item"
-    const notificationSound = document.getElementById('notification-sound'); // Áudio
+    const notificationSound = document.getElementById('notification-sound');
+    const tabKds = document.getElementById('tab-kds');
+    const tabAdmin = document.getElementById('tab-admin'); // Added for clarity if needed elsewhere
+    const adminView = document.getElementById('admin-view'); // Added for clarity if needed elsewhere
+    const navTabs = document.querySelectorAll('.nav-tab');
 
-    // Abas e Views
-    const tabs = document.querySelectorAll('.nav-tab');
-    const views = document.querySelectorAll('.main-view');
 
-    // --- Chaves de Armazenamento e API ---
-    const KDS_STORAGE_KEY = 'pedidosCozinhaPendentes';
-    const API_MENU_URL = 'http://127.0.0.1:5000/menu'; // URL do endpoint do cardápio
+    let displayedOrderIds = new Set();
+    let isKdsTabActive = true; // Assume KDS tab is active initially as per HTML
+    let pollingIntervalId = null;
+    const POLLING_INTERVAL = 15000; // 15 segundos
 
-    // --- Variáveis de Estado ---
-    let editingItemId = null; // ID do item sendo editado (null se adicionando)
-    let menuItems = []; // Cache local dos itens do cardápio [{id, name, price}]
-
-    // --- Funções Auxiliares ---
-
-    /** Escapa caracteres HTML para prevenir XSS simples */
-    function escapeHtml(unsafe) {
-        if (typeof unsafe !== 'string') return unsafe;
-        return unsafe
-             .replace(/&/g, "&amp;")
-             .replace(/</g, "&lt;")
-             .replace(/>/g, "&gt;")
-             .replace(/"/g, "&quot;")
-             .replace(/'/g, "&#039;");
-    }
-
-    /** Exibe uma mensagem temporária na área do formulário */
-    function showFormMessage(message, type = 'info') { // tipos: 'info', 'success', 'error'
-        if (!formMessage) {
-            console.warn("Elemento #form-message não encontrado.");
-            alert(message); // Fallback
+    // --- Funções do KDS (Pedidos Pendentes) ---
+    async function fetchKDSOrders() {
+        if (!isKdsTabActive) {
+            // console.log("KDS tab not active, skipping fetch.");
             return;
         }
-        formMessage.textContent = message;
-        formMessage.className = `admin-form-message ${type}`;
-        formMessage.style.display = 'block';
-        setTimeout(() => {
-            if (formMessage) formMessage.style.display = 'none';
-        }, 4000); // Esconde após 4 segundos
-    }
-
-    /** Formata um timestamp ISO para HH:MM */
-    function formatTimestamp(isoString) {
-        if (!isoString) return '--:--';
+        // console.log("Fetching KDS orders...");
         try {
-            return new Date(isoString).toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        } catch (e) {
-            console.error("Erro ao formatar timestamp:", isoString, e);
-            return '--:--';
-        }
-    }
-
-    /** Toca o som de notificação */
-    function playNotificationSound() {
-        if (notificationSound) {
-            notificationSound.play().catch(error => console.warn("Não foi possível tocar som de notificação:", error));
-        }
-    }
-
-    // ========================================================================
-    // Funções KDS (Visualização de Pedidos)
-    // ========================================================================
-
-    /** Renderiza a lista de pedidos pendentes do localStorage */
-    function renderOrders() {
-        if (!kdsOrdersList) {
-            console.error("Elemento da lista KDS (#kds-orders-list) não encontrado!");
-            return;
-        }
-        kdsOrdersList.innerHTML = ''; // Limpa antes de renderizar
-
-        try {
-            const storedOrders = localStorage.getItem(KDS_STORAGE_KEY);
-            const orders = JSON.parse(storedOrders || '[]');
-
-            if (orders.length === 0) {
-                kdsOrdersList.innerHTML = '<li class="no-orders">Nenhum pedido pendente.</li>';
+            const response = await fetch('/api/kds/orders');
+            if (!response.ok) {
+                console.error('Erro ao buscar pedidos KDS:', response.status, response.statusText);
+                kdsOrdersList.innerHTML = '<li class="no-orders error-message">Erro ao carregar pedidos. Tente novamente.</li>';
                 return;
             }
-
-            orders.forEach(order => {
-                if (!order || !order.id || !order.items) {
-                     console.warn("Ignorando pedido mal formatado no KDS:", order);
-                     return; // Pula este pedido
-                }
-
-                const li = document.createElement('li');
-                li.classList.add('kds-order-item');
-                li.dataset.id = order.id; // Adiciona ID para referência
-
-                const timestamp = formatTimestamp(order.timestamp);
-                const orderNumber = order.id.split('-')[1] || order.id; // Pega parte aleatória do ID
-
-                // Mapeia itens para string HTML, tratando quantidade
-                const itemsString = order.items.map(item =>
-                    `${escapeHtml(item.quantity || 1)}x ${escapeHtml(item.name)}`
-                ).join('<br>');
-
-                // Formata o total se existir
-                const totalString = (order.total !== null && !isNaN(order.total))
-                    ? ` | Total: R$ ${parseFloat(order.total).toFixed(2).replace('.', ',')}`
-                    : '';
-
-                li.innerHTML = `
-                    <div class="order-header">
-                        <strong>Pedido #${orderNumber}</strong>
-                        <span class="order-time">(${timestamp})</span>
-                    </div>
-                    <div class="order-items">${itemsString || '<i>Itens não especificados</i>'}</div>
-                    <div class="order-footer">
-                        <span>Status: ${escapeHtml(order.status || 'Pendente')}${totalString}</span>
-                        <div class="kds-buttons-group">
-                            <button class="kds-button complete-button" data-action="complete" title="Marcar como Concluído">
-                                <i class="fas fa-check"></i> Concluir
-                            </button>
-                            <button class="kds-button cancel-button" data-action="cancel" title="Cancelar Pedido">
-                                <i class="fas fa-times"></i> Cancelar
-                            </button>
-                        </div>
-                    </div>
-                `;
-                kdsOrdersList.appendChild(li);
-            });
-
-        } catch (e) {
-            console.error("Erro ao renderizar pedidos do KDS:", e);
-            kdsOrdersList.innerHTML = '<li class="no-orders error">Erro ao carregar pedidos. Verifique o console.</li>';
-        }
-    }
-
-    /** Atualiza o estado de um pedido no localStorage (Concluído ou Cancelado) */
-    function updateOrderState(orderId, action) { // action: 'complete' ou 'cancel'
-        if (!orderId || !action) return;
-
-        try {
-            let pendingOrders = JSON.parse(localStorage.getItem(KDS_STORAGE_KEY) || '[]');
-            const updatedOrders = pendingOrders.filter(order => order.id !== orderId); // Remove o pedido
-
-            if (updatedOrders.length !== pendingOrders.length) {
-                localStorage.setItem(KDS_STORAGE_KEY, JSON.stringify(updatedOrders));
-                console.log(`Pedido ${orderId} ${action === 'complete' ? 'concluído' : 'cancelado'} e removido da lista.`);
-                renderOrders(); // Re-renderiza a lista KDS
-                // Opcional: Mover para outra lista (concluídos/cancelados) em vez de apenas remover
-            } else {
-                console.warn(`Pedido ${orderId} não encontrado para ${action}.`);
-            }
-        } catch (e) {
-            console.error(`Erro ao ${action} pedido ${orderId}:`, e);
-        }
-    }
-
-    /** Lida com cliques nos botões Concluir/Cancelar do KDS */
-    function handleKdsButtonClick(event) {
-        const button = event.target.closest('.kds-button');
-        if (!button) return; // Não clicou em um botão
-
-        const action = button.dataset.action; // 'complete' ou 'cancel'
-        const orderItem = button.closest('.kds-order-item');
-        const orderId = orderItem?.dataset.id;
-
-        if (orderId && (action === 'complete' || action === 'cancel')) {
-            updateOrderState(orderId, action);
-        }
-    }
-
-
-    // ========================================================================
-    // Funções Admin (Gerenciar Cardápio)
-    // ========================================================================
-
-    /** Busca o cardápio atual do backend */
-    async function loadMenuFromAPI() {
-        try {
-            const response = await fetch(API_MENU_URL); // GET por padrão
-            if (!response.ok) {
-                let errorMsg = `Erro HTTP ${response.status}`;
-                try {
-                    const errorData = await response.json();
-                    errorMsg += `: ${errorData.error || response.statusText}`;
-                } catch { /* Ignora erro no parse do erro */ }
-                throw new Error(errorMsg);
-            }
-            const data = await response.json();
-            // Garante que é um array e que 'price' é número
-            menuItems = (Array.isArray(data) ? data : []).map(item => ({
-                ...item,
-                price: parseFloat(item.price) || 0 // Converte preço para número
-            }));
+            const orders = await response.json();
+            displayKDSOrders(orders);
         } catch (error) {
-            console.error("Admin: Erro ao carregar cardápio da API:", error);
-            showFormMessage(`Falha ao carregar o cardápio: ${error.message}`, 'error');
-            menuItems = []; // Limpa cache local em caso de erro
-        } finally {
-             renderMenuTable(); // Renderiza a tabela (com dados ou vazia)
+            console.error('Falha na requisição de pedidos KDS:', error);
+            kdsOrdersList.innerHTML = '<li class="no-orders error-message">Falha ao conectar com o servidor.</li>';
         }
     }
 
-    /** Renderiza a tabela de itens do cardápio */
-    function renderMenuTable() {
-        if (!adminMenuTableBody) {
-            console.error("Elemento #menu-table-body não encontrado!");
-            return;
-        }
-        adminMenuTableBody.innerHTML = ''; // Limpa tabela
+    function displayKDSOrders(orders) {
+        if (!kdsOrdersList) return;
 
-        if (menuItems.length === 0) {
-            if (noMenuItemsRow) noMenuItemsRow.style.display = 'table-row';
-        } else {
-            if (noMenuItemsRow) noMenuItemsRow.style.display = 'none';
-            menuItems.forEach(item => {
-                if (!item || !item.id) return; // Pula itens inválidos
-                const row = document.createElement('tr');
-                row.dataset.itemId = item.id; // Adiciona ID à linha para referência
-                row.innerHTML = `
-                    <td>${escapeHtml(item.name)}</td>
-                    <td>R$ ${(item.price || 0).toFixed(2).replace('.', ',')}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-warning edit-btn" data-id="${escapeHtml(item.id)}" title="Editar">
-                                <i class="fas fa-pencil-alt"></i>
-                            </button>
-                            <button class="btn btn-danger delete-btn" data-id="${escapeHtml(item.id)}" title="Excluir">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                adminMenuTableBody.appendChild(row);
-            });
-        }
-        // Reanexa listeners aos botões (importante após re-renderizar)
-        attachTableButtonListeners();
-    }
-
-    /** Anexa listeners aos botões de Editar/Excluir na tabela */
-    function attachTableButtonListeners() {
-        document.querySelectorAll('#menu-table-body .edit-btn').forEach(button => {
-            button.removeEventListener('click', handleEditClick); // Evita duplicatas
-            button.addEventListener('click', handleEditClick);
-        });
-        document.querySelectorAll('#menu-table-body .delete-btn').forEach(button => {
-            button.removeEventListener('click', handleDeleteClick); // Evita duplicatas
-            button.addEventListener('click', handleDeleteClick);
-        });
-    }
-
-    /** Envia o cardápio atualizado para o backend */
-    async function updateMenuOnBackend() {
-        try {
-            const response = await fetch(API_MENU_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                // Envia o array 'menuItems' local, garantindo que price seja número
-                body: JSON.stringify(menuItems.map(item => ({...item, price: parseFloat(item.price) || 0})))
-            });
-
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result.error || `Erro HTTP ${response.status}`);
-            }
-            return true; // Indica sucesso
-        } catch (error) {
-            console.error("Admin: Erro ao enviar atualização do cardápio:", error);
-            showFormMessage(`Falha ao salvar cardápio no servidor: ${error.message}.`, 'error');
-            return false; // Indica falha
-        }
-    }
-
-    /** Lida com o submit do formulário (Adicionar ou Salvar Edição) */
-    async function handleFormSubmit(event) {
-        event.preventDefault();
-        const name = itemNameInput.value.trim();
-        const priceInput = itemPriceInput.value.replace(',', '.'); // Aceita vírgula
-        const price = parseFloat(priceInput);
-
-        if (!name || isNaN(price) || price < 0) {
-            showFormMessage("Por favor, preencha nome e preço válido (maior ou igual a zero).", 'error');
+        if (orders.length === 0) {
+            kdsOrdersList.innerHTML = '<li class="no-orders">Nenhum pedido pendente no momento.</li>';
+            displayedOrderIds.clear(); // Clear if no orders
             return;
         }
 
-        let message = "";
-        let success = false;
-        const currentEditingId = editingItemId; // Captura antes de modificar
+        const newOrderIds = new Set();
+        let newOrdersArrived = false;
 
-        if (currentEditingId) {
-            // Editando
-            const itemIndex = menuItems.findIndex(item => item.id === currentEditingId);
-            if (itemIndex > -1) {
-                menuItems[itemIndex].name = name;
-                menuItems[itemIndex].price = price;
-                message = "Item atualizado com sucesso!";
-                success = true;
-            } else {
-                message = "Erro: Item a ser editado não encontrado.";
-                success = false;
+        // Build new list elements
+        const fragment = document.createDocumentFragment();
+        orders.forEach(order => {
+            newOrderIds.add(order._id);
+            if (!displayedOrderIds.has(order._id)) {
+                newOrdersArrived = true;
             }
-        } else {
-            // Adicionando
-            const newItem = {
-                // ID gerado no frontend para simplificar, idealmente seria gerado no backend
-                id: `item_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
-                name: name,
-                price: price
-            };
-            menuItems.push(newItem);
-            message = "Novo item adicionado com sucesso!";
-            success = true;
-        }
 
-        if (success) {
-            renderMenuTable(); // Atualiza tabela visualmente PRIMEIRO
-            const backendSuccess = await updateMenuOnBackend(); // Tenta salvar no backend
-            if (backendSuccess) {
-                showFormMessage(message, 'success');
-                resetForm();
-            } else {
-                // Backend falhou, mensagem de erro já foi mostrada por updateMenuOnBackend
-            }
-        } else {
-            showFormMessage(message, 'error'); // Mostra erro (item não encontrado)
-            resetForm();
-        }
-    }
+            const listItem = document.createElement('li');
+            listItem.className = 'kds-order-item card'; // Assuming 'card' class for styling
+            listItem.dataset.orderId = order._id;
 
-    /** Prepara o formulário para editar um item clicado */
-    function handleEditClick(event) {
-        const button = event.target.closest('button');
-        const id = button?.dataset.id;
-        const itemToEdit = menuItems.find(item => item.id === id);
+            let itemsHtml = '<ul class="order-item-list">';
+            order.items.forEach(item => {
+                itemsHtml += `<li>${item.quantity}x ${item.name}</li>`;
+            });
+            itemsHtml += '</ul>';
 
-        if (itemToEdit) {
-            editingItemId = id;
-            if (itemIdInput) itemIdInput.value = itemToEdit.id;
-            itemNameInput.value = itemToEdit.name;
-            itemPriceInput.value = (itemToEdit.price || 0).toFixed(2); // Usa preço numérico
-            if (saveButton) saveButton.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
-            if (cancelEditButton) cancelEditButton.style.display = 'inline-block';
-            itemNameInput.focus();
-            // Rola a página para o topo para ver o formulário
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            console.warn("Item para editar não encontrado com ID:", id);
-        }
-    }
+            // Format time: HH:MM
+            const orderTime = order.timestamp_iso ? new Date(order.timestamp_iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'N/A';
 
-    /** Lida com o clique no botão de excluir item */
-    async function handleDeleteClick(event) {
-        const button = event.target.closest('button');
-        const id = button?.dataset.id;
-        const itemIndex = menuItems.findIndex(item => item.id === id);
-
-        if (itemIndex > -1) {
-            const itemToDelete = menuItems[itemIndex];
-            if (confirm(`Tem certeza que deseja excluir o item "${escapeHtml(itemToDelete.name)}"?`)) {
-                menuItems.splice(itemIndex, 1); // Remove do array local
-                renderMenuTable(); // Atualiza tabela visualmente
-                const backendSuccess = await updateMenuOnBackend(); // Tenta salvar no backend
-                if (backendSuccess) {
-                    showFormMessage(`Item "${escapeHtml(itemToDelete.name)}" excluído.`, 'info');
-                    if (editingItemId === id) { // Se estava editando o item excluído
-                        resetForm();
-                    }
-                }
-            }
-        } else {
-             console.warn("Item para excluir não encontrado com ID:", id);
-        }
-    }
-
-    /** Reseta o formulário de item para o estado de adição */
-    function resetForm() {
-        editingItemId = null;
-        if (adminMenuForm) adminMenuForm.reset();
-        if (itemIdInput) itemIdInput.value = '';
-        if (saveButton) saveButton.innerHTML = '<i class="fas fa-plus"></i> Adicionar Item';
-        if (cancelEditButton) cancelEditButton.style.display = 'none';
-        if (formMessage) formMessage.style.display = 'none'; // Esconde mensagem residual
-    }
-
-    // ========================================================================
-    // Funções de Navegação (Abas)
-    // ========================================================================
-
-    /** Alterna a visualização entre KDS e Admin */
-    function switchView(targetViewId) {
-        views.forEach(view => {
-            view.style.display = (view.id === targetViewId) ? 'block' : 'none';
-            view.classList.toggle('active-view', view.id === targetViewId);
+            listItem.innerHTML = `
+                <div class="order-header">
+                    <span class="order-id">Pedido #${order._id.slice(-6)}</span>
+                    <span class="order-time"><i class="fas fa-clock"></i> ${orderTime}</span>
+                </div>
+                <div class="order-body">
+                    ${itemsHtml}
+                </div>
+                <div class="order-footer">
+                    <span class="order-status status-${order.status.toLowerCase()}">${order.status}</span>
+                    <button class="btn btn-kds-action btn-mark-preparando" data-id="${order._id}">Marcar Preparando</button>
+                    <button class="btn btn-kds-action btn-mark-pronto" data-id="${order._id}">Marcar Pronto</button>
+                </div>
+            `;
+            fragment.appendChild(listItem);
         });
+        
+        kdsOrdersList.innerHTML = ''; // Clear previous content
+        kdsOrdersList.appendChild(fragment);
 
-        tabs.forEach(tab => {
-             tab.classList.toggle('active', tab.dataset.target === targetViewId);
+        // Update the set of displayed order IDs
+        displayedOrderIds = newOrderIds;
+
+        if (newOrdersArrived && notificationSound) {
+            notificationSound.play().catch(e => console.warn("Erro ao tocar som de notificação:", e));
+        }
+
+        // Add event listeners for action buttons (example)
+        document.querySelectorAll('.btn-mark-preparando').forEach(button => {
+            button.addEventListener('click', () => handleOrderStatusUpdate(button.dataset.id, 'Em Preparo'));
         });
+        document.querySelectorAll('.btn-mark-pronto').forEach(button => {
+            button.addEventListener('click', () => handleOrderStatusUpdate(button.dataset.id, 'Pronto'));
+        });
+    }
 
-        // Ações específicas ao trocar de view
-        if (targetViewId === 'kds-view') {
-            renderOrders(); // Garante que KDS está atualizado
-        } else if (targetViewId === 'admin-view') {
-            // Garante que tabela admin está atualizada (pode já ter sido carregada)
-            renderMenuTable();
-            resetForm(); // Reseta o formulário ao entrar na view admin
+    async function handleOrderStatusUpdate(orderId, newStatus) {
+        console.log(`Atualizar pedido ${orderId} para ${newStatus}`);
+        // TODO: Implement API call to update order status
+        // Ex: await fetch(`/api/orders/${orderId}/status`, { method: 'PUT', body: JSON.stringify({ status: newStatus }), headers: {'Content-Type': 'application/json'} });
+        // After successful update, re-fetch orders:
+        // fetchKDSOrders();
+        alert(`Funcionalidade "Marcar ${newStatus}" para pedido ${orderId} ainda não implementada no backend.`);
+    }
+
+
+    function startKDSPolling() {
+        if (pollingIntervalId) {
+            clearInterval(pollingIntervalId);
+        }
+        fetchKDSOrders(); // Fetch immediately
+        pollingIntervalId = setInterval(fetchKDSOrders, POLLING_INTERVAL);
+        // console.log("KDS polling started.");
+    }
+
+    function stopKDSPolling() {
+        if (pollingIntervalId) {
+            clearInterval(pollingIntervalId);
+            pollingIntervalId = null;
+            // console.log("KDS polling stopped.");
         }
     }
 
-    // ========================================================================
-    // Event Listeners Globais
-    // ========================================================================
+    // --- Gerenciamento de Abas (simplificado, já que você tem um no kds.html) ---
+    // Este código assume que a lógica de troca de abas no seu kds.html principal
+    // já define qual view está ativa. Vamos nos basear no botão 'tab-kds'.
 
-    // Listener para o formulário Admin
-    if (adminMenuForm) {
-        adminMenuForm.addEventListener('submit', handleFormSubmit);
+    // --- Initial Tab State & Polling ---
+    if (tabKds && tabKds.classList.contains('active')) {
+        isKdsTabActive = true;
+        startKDSPolling();
     } else {
-        console.error("Formulário Admin (#menu-item-form) não encontrado!");
+        isKdsTabActive = false;
+        // If admin tab is active by default (it's not in the HTML, but for completeness)
+        if (tabAdmin && tabAdmin.classList.contains('active')) {
+            if (adminView && adminView.classList.contains('active-view')) { // Ensure view is also active
+                fetchMenu();
+            }
+        }
     }
 
-    // Listener para o botão Cancelar Edição
+    // --- Unified Tab Click Handler ---
+    navTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetViewId = tab.dataset.target;
+            const targetView = document.getElementById(targetViewId);
+
+            // Deactivate all views and tabs
+            document.querySelectorAll('.main-view').forEach(view => view.classList.remove('active-view'));
+            navTabs.forEach(t => t.classList.remove('active'));
+
+            // Activate the clicked tab and its corresponding view
+            if (targetView) {
+                targetView.classList.add('active-view');
+            }
+            tab.classList.add('active');
+
+            // Manage KDS polling and fetch menu for admin tab
+            if (targetViewId === 'kds-view') {
+                if (!isKdsTabActive) {
+                    isKdsTabActive = true;
+                    if (kdsOrdersList) kdsOrdersList.innerHTML = '<li class="no-orders">Carregando pedidos...</li>';
+                    startKDSPolling();
+                }
+            } else { // Other tabs (e.g., admin-view)
+                if (isKdsTabActive) {
+                    isKdsTabActive = false;
+                    stopKDSPolling();
+                }
+                if (targetViewId === 'admin-view') {
+                    fetchMenu(); // Fetch menu when admin tab is activated
+                }
+            }
+        });
+    });
+
+
+    // --- Lógica de Gerenciamento de Cardápio (placeholder, já que o foco é KDS) ---
+    const menuItemForm = document.getElementById('menu-item-form');
+    const menuTableBody = document.getElementById('menu-table-body');
+    const noMenuItemsRow = document.getElementById('no-menu-items-row');
+    const editItemIdField = document.getElementById('edit-item-id');
+    const itemNameField = document.getElementById('item-name');
+    const itemPriceField = document.getElementById('item-price');
+    const saveButton = document.getElementById('save-button');
+    const cancelEditButton = document.getElementById('cancel-edit-button');
+    const formMessage = document.getElementById('form-message');
+
+    async function fetchMenu() {
+        try {
+            const response = await fetch('/menu');
+            const menuData = await response.json();
+            renderMenu(menuData.menu);
+        } catch (error) {
+            console.error("Erro ao buscar cardápio:", error);
+            if (menuTableBody) menuTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar cardápio.</td></tr>';
+        }
+    }
+
+    function renderMenu(menuItems) {
+        if (!menuTableBody || !noMenuItemsRow) return;
+        menuTableBody.innerHTML = ''; // Limpa a tabela
+
+        if (!menuItems || menuItems.length === 0) {
+            noMenuItemsRow.style.display = ''; // Mostra a mensagem "Nenhum item"
+            return;
+        }
+        noMenuItemsRow.style.display = 'none'; // Esconde a mensagem
+
+        menuItems.forEach(item => {
+            const row = menuTableBody.insertRow();
+            row.insertCell().textContent = item.name;
+            row.insertCell().textContent = parseFloat(item.price).toFixed(2);
+
+            const actionsCell = row.insertCell();
+            const editButton = document.createElement('button');
+            editButton.innerHTML = '<i class="fas fa-edit"></i> Editar';
+            editButton.className = 'btn btn-edit';
+            editButton.onclick = () => populateFormForEdit(item);
+            actionsCell.appendChild(editButton);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.innerHTML = '<i class="fas fa-trash"></i> Excluir';
+            deleteButton.className = 'btn btn-delete';
+            deleteButton.onclick = () => deleteMenuItem(item.name); // Supondo que o nome é único para exclusão
+            actionsCell.appendChild(deleteButton);
+        });
+    }
+
+    function populateFormForEdit(item) {
+        editItemIdField.value = item.name; // Usando nome como ID para simplicidade, idealmente seria um ID único
+        itemNameField.value = item.name;
+        itemPriceField.value = parseFloat(item.price).toFixed(2);
+        saveButton.innerHTML = '<i class="fas fa-save"></i> Salvar Alterações';
+        cancelEditButton.style.display = 'inline-block';
+        formMessage.textContent = '';
+        itemNameField.focus();
+    }
+
+    function resetForm() {
+        menuItemForm.reset();
+        editItemIdField.value = '';
+        saveButton.innerHTML = '<i class="fas fa-plus"></i> Adicionar Item';
+        cancelEditButton.style.display = 'none';
+        formMessage.textContent = '';
+    }
+
     if (cancelEditButton) {
         cancelEditButton.addEventListener('click', resetForm);
     }
 
-    // Listeners para as Abas de Navegação
-    tabs.forEach(tab => {
-        tab.addEventListener('click', (event) => {
-            const targetViewId = event.currentTarget.dataset.target;
-            if (targetViewId) {
-                switchView(targetViewId);
+    if (menuItemForm) {
+        menuItemForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            formMessage.textContent = '';
+
+            const name = itemNameField.value.trim();
+            const priceStr = itemPriceField.value.trim().replace(',', '.');
+            const price = parseFloat(priceStr);
+            const id = editItemIdField.value;
+
+            if (!name || isNaN(price) || price <= 0) {
+                formMessage.textContent = 'Por favor, preencha nome e preço válido.';
+                formMessage.className = 'admin-form-message error';
+                return;
+            }
+
+            const itemData = { name, price: price.toFixed(2) };
+            let url = '/menu';
+            let method = 'POST';
+
+            // Se id existe, estamos editando. A API de exemplo não suporta PUT/PATCH por ID.
+            // Para uma edição real, a API precisaria de um endpoint tipo PUT /menu/item_id ou similar.
+            // Por ora, a submissão sempre adiciona ou reescreve o cardápio inteiro.
+            // Para simular edição, precisaríamos buscar o cardápio, modificar e reenviar tudo.
+            // Isso é ineficiente. A API /menu como está, substitui o cardápio inteiro.
+
+            // Para simplificar e usar a API existente:
+            // Se for uma "edição", vamos buscar o cardápio, remover o item antigo (se existir), adicionar o novo/modificado, e enviar o cardápio completo.
+            // Ou, se a API /menu aceitar um item e o adicionar/atualizar, seria mais simples.
+            // Assumindo que a API /menu POST substitui tudo:
+            
+            try {
+                // Para uma edição real, você faria um GET, modificaria o item na lista e faria um POST com a lista completa.
+                // Para adicionar, apenas POST o novo item (se a API suportar adição incremental, senão, GET, ADD, POST).
+                // A API /menu atual parece substituir o menu.json inteiro.
+                
+                // Vamos simplificar: se é edição, avisamos que a API atual não suporta bem.
+                // Para adicionar, precisamos enviar o cardápio inteiro.
+                // Esta parte é complexa devido à natureza da API /menu que substitui tudo.
+                
+                // Ação mais simples para o exemplo: sempre buscar, adicionar/modificar, e reenviar tudo.
+                let currentMenuResponse = await fetch('/menu');
+                let currentMenuData = await currentMenuResponse.json();
+                let menuToSave = currentMenuData.menu || [];
+
+                if (id) { // "Editando"
+                    menuToSave = menuToSave.filter(item => item.name !== id); // Remove o antigo se o nome mudou
+                    menuToSave = menuToSave.filter(item => item.name !== itemData.name); // Remove duplicata se nome não mudou
+                }
+                menuToSave.push(itemData);
+                // Ordenar para consistência
+                menuToSave.sort((a, b) => a.name.localeCompare(b.name));
+
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ menu: menuToSave }) // A API espera um objeto com a chave "menu"
+                });
+
+                if (response.ok) {
+                    formMessage.textContent = `Item "${name}" ${id ? 'atualizado' : 'adicionado'} com sucesso!`;
+                    formMessage.className = 'admin-form-message success';
+                    resetForm();
+                    fetchMenu(); // Recarrega a lista
+                } else {
+                    const errorData = await response.json();
+                    formMessage.textContent = `Erro: ${errorData.error || response.statusText}`;
+                    formMessage.className = 'admin-form-message error';
+                }
+            } catch (error) {
+                console.error("Erro ao salvar item:", error);
+                formMessage.textContent = 'Erro de conexão ao salvar o item.';
+                formMessage.className = 'admin-form-message error';
             }
         });
-    });
-
-    // Listener para botões de Ação do KDS (delegação de evento)
-    if (kdsOrdersList) {
-        kdsOrdersList.addEventListener('click', handleKdsButtonClick);
     }
 
-    // Listener para atualizações no localStorage (outras abas/janelas)
-    window.addEventListener('storage', (event) => {
-        if (event.key === KDS_STORAGE_KEY) {
-            const kdsViewElement = document.getElementById('kds-view');
-            if (kdsViewElement && kdsViewElement.classList.contains('active-view')) {
-                 renderOrders();
-                 playNotificationSound();
+    // Carregar cardápio inicial se a aba admin estiver visível ou se for clicada
+    // This section can be removed as its logic is now integrated into the Unified Tab Click Handler
+    // and the Initial Tab State & Polling section.
+    /*
+    if (document.getElementById('tab-admin')) {
+         // Se a aba admin for clicada, carrega o menu
+        document.getElementById('tab-admin').addEventListener('click', () => {
+            if (document.getElementById('admin-view').classList.contains('active-view')) {
+                 fetchMenu();
             }
+        });
+        // Se a aba admin já estiver ativa no carregamento (improvável com KDS padrão)
+        if (document.getElementById('admin-view').classList.contains('active-view')) {
+            fetchMenu();
         }
-    });
-
-    // ========================================================================
-    // Inicialização
-    // ========================================================================
-    async function initializeApp() {
-        await loadMenuFromAPI(); // Carrega o cardápio da API primeiro
-        renderOrders(); // Renderiza os pedidos KDS iniciais
-        switchView('kds-view'); // Define a view KDS como inicial
     }
-
-    initializeApp();
-
-}); // Fim DOMContentLoaded
+    */
+});

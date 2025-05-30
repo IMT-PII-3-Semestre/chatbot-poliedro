@@ -89,11 +89,11 @@ body {
 }
 
 .kds-orders-container {
-    list-style: none;
+    display: flex;
+    flex-wrap: wrap; /* Permite que os cards quebrem para a próxima linha */
+    gap: 20px; /* Espaço entre os cards */
     padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Grade responsiva */
-    gap: 25px; /* Espaço entre os cards */
+    list-style-type: none;
 }
 
 .kds-order-item {
@@ -107,6 +107,8 @@ body {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     position: relative; /* Para posicionamento absoluto interno */
     overflow: hidden; /* Esconde overflow para efeitos potenciais */
+    width: 300px; /* Largura fixa para cada card de pedido, ajuste conforme necessário */
+    justify-content: space-between;
 }
 
 .kds-order-item:hover {
@@ -135,92 +137,81 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #f0f0f0; /* Separador mais claro */
+    border-bottom: 1px solid #eee;
 }
 
-.kds-order-item .order-header strong {
+.kds-order-item .order-id {
+    font-weight: bold;
     font-size: 1.1em;
-    color: #343a40;
+    color: #333;
 }
 
 .kds-order-item .order-time {
-    font-size: 0.85em;
-    color: #6c757d;
-    background-color: #e9ecef; /* Fundo sutil em formato de pílula */
-    padding: 3px 8px;
-    border-radius: 12px; /* Formato de pílula */
+    font-size: 0.9em;
+    color: #555;
+}
+.kds-order-item .order-time .fas {
+    margin-right: 5px;
 }
 
-.kds-order-item .order-items {
-    margin-bottom: 20px;
-    flex-grow: 1; /* Permite que o rodapé fique na parte inferior */
-    font-size: 0.95em;
-    line-height: 1.7;
-    color: #495057;
+.kds-order-item .order-body .order-item-list {
+    list-style-type: none;
+    padding-left: 0;
+    margin-bottom: 10px;
+}
+
+.kds-order-item .order-body .order-item-list li {
+    padding: 3px 0;
+    color: #444;
 }
 
 .kds-order-item .order-footer {
+    margin-top: auto; /* Empurra o rodapé para baixo */
+    padding-top: 10px;
+    border-top: 1px solid #eee;
     display: flex;
-    justify-content: space-between; /* Empurra status e botões para lados opostos */
+    justify-content: space-between;
     align-items: center;
-    margin-top: auto; /* Empurra rodapé para baixo se o conteúdo for curto */
-    padding-top: 15px;
-    border-top: 1px solid #f0f0f0; /* Separador mais claro */
 }
 
-.kds-order-item .order-footer span {
-    font-size: 0.9em;
-    font-weight: 500;
-    color: #495057;
+.kds-order-item .order-status {
+    font-weight: bold;
 }
+.status-pendente { color: #ff9800; /* Laranja */ }
+.status-em_preparo { color: #2196f3; /* Azul */ } /* Se usar "Em Preparo" */
+.status-em-preparo { color: #2196f3; /* Azul */ } /* Se usar "Em-Preparo" */
+.status-pronto { color: #4caf50; /* Verde */ }
 
-.kds-order-item .order-footer .kds-buttons-group {
-    display: flex;
-    gap: 8px; /* Espaço entre botões */
-}
-
-/* --- Estilos dos Botões KDS --- */
-.kds-button {
-    padding: 8px 14px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
+.btn-kds-action {
+    padding: 6px 10px;
     font-size: 0.85em;
-    font-weight: 500;
-    transition: background-color 0.2s, transform 0.1s;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
 }
-
-.kds-button:hover {
-    transform: scale(1.03); /* Leve efeito de escala */
-}
-
-.kds-button.complete-button {
-    background-color: #198754; /* Verde sucesso do Bootstrap */
+.btn-mark-preparando {
+    background-color: #2196f3;
     color: white;
+    border-color: #1e88e5;
 }
-.kds-button.complete-button:hover {
-    background-color: #157347;
-}
-
-.kds-button.cancel-button {
-    background-color: #dc3545; /* Vermelho perigo do Bootstrap */
+.btn-mark-pronto {
+    background-color: #4caf50;
     color: white;
+    border-color: #43a047;
 }
-.kds-button.cancel-button:hover {
-    background-color: #bb2d3b;
+.btn-kds-action:hover {
+    opacity: 0.9;
 }
 
 /* --- Mensagem de Nenhum Pedido --- */
 .no-orders {
+    width: 100%;
     text-align: center;
-    padding: 50px 20px;
-    font-size: 1.1em;
-    color: #6c757d;
+    padding: 20px;
+    font-size: 1.2em;
+    color: #777;
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
@@ -229,7 +220,8 @@ body {
 }
 
 /* Estilos Específicos da Visão Admin */
-.admin-main {
+/* Apply grid layout and other admin-specific styles ONLY when the admin view is active */
+.admin-main.active-view {
     display: grid; /* Usa grid para layout */
     grid-template-columns: 1fr; /* Padrão para uma coluna */
     gap: 25px;
@@ -416,7 +408,8 @@ body {
 
 /* Responsividade */
 @media (min-width: 768px) {
-    .admin-main {
+    /* Apply two-column layout for admin view ONLY when it is active and screen is larger */
+    .admin-main.active-view {
         grid-template-columns: 350px 1fr; /* Layout de duas colunas em telas maiores: Formulário à esquerda, tabela à direita */
     }
 }
@@ -458,8 +451,15 @@ body {
     }
 
     /* Ajustes Admin para telas pequenas */
-    .admin-main {
-        grid-template-columns: 1fr; /* Empilha formulário e tabela */
+    /* If admin-main needs specific adjustments for small screens when active,
+       ensure the selector is .admin-main.active-view if it involves display or major layout overrides.
+       However, the existing rule for grid-template-columns: 1fr for .admin-main.active-view (mobile-first)
+       is likely sufficient, and this media query might only adjust child elements or general .btn styles.
+       The existing .admin-main { grid-template-columns: 1fr; } for small screens is fine if it's within
+       .admin-main.active-view context or if the general .admin-main.active-view already sets it to 1fr.
+    */
+    .admin-main.active-view { /* Ensuring consistency if any specific small-screen overrides for admin layout are needed */
+        grid-template-columns: 1fr; /* Empilha formulário e tabela - this is already the default for .admin-main.active-view */
     }
     .btn {
         padding: 8px 15px;

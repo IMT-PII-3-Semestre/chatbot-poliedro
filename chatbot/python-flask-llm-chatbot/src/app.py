@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure, OperationFailure
+from pymongo.errors import ConnectionFailure, OperationFailure # Ensure OperationFailure is imported
 import datetime
 from datetime import timezone
 from chatbot.handler import ChatbotHandler
@@ -337,11 +337,15 @@ def handle_menu():
 # --- API Endpoint: KDS Orders ---
 @app.route('/api/kds/orders', methods=['GET'])
 def api_kds_orders():
+    logging.info(f"/api/kds/orders: Iniciando busca de pedidos. orders_collection is {'None' if orders_collection is None else 'válida'}.")
     if orders_collection is not None:
         try:
+            logging.info("/api/kds/orders: Tentando buscar e ordenar pedidos do MongoDB.")
             # Busca pedidos com status "Pendente" ou outros status relevantes para o KDS
             # Ordenados pelo mais antigo primeiro (FIFO para a cozinha)
-            kds_orders = list(orders_collection.find({"status": "Pendente"}).sort("timestamp", 1))
+            kds_orders_cursor = orders_collection.find({"status": "Pendente"}).sort("timestamp", 1)
+            kds_orders = list(kds_orders_cursor) # Execute query and convert to list
+            logging.info(f"/api/kds/orders: Encontrados {len(kds_orders)} pedidos pendentes.")
             
             processed_orders = []
             for order_data in kds_orders: # Use a new variable to avoid modifying the iterator
@@ -353,22 +357,37 @@ def api_kds_orders():
                 if isinstance(timestamp_obj, datetime.datetime):
                     order_data['timestamp_iso'] = timestamp_obj.isoformat()
                 else:
-                    order_data['timestamp_iso'] = None
+                    # If timestamp is not a datetime object (e.g., already a string or None)
+                    # or if it's missing, set timestamp_iso appropriately.
+                    if timestamp_obj is not None:
+                        logging.warning(f"/api/kds/orders: Timestamp para pedido {order_data['_id']} não é um objeto datetime, é {type(timestamp_obj)}.")
+                        order_data['timestamp_iso'] = str(timestamp_obj) # Fallback to string conversion
+                    else:
+                        order_data['timestamp_iso'] = None 
                 
                 # Remove the original datetime object from the dictionary before jsonify
-                # This helps if jsonify has an issue with the specific datetime objects from MongoDB/PyMongo
+                # This was part of a previous fix, ensuring it's correctly handled.
                 if 'timestamp' in order_data:
                     del order_data['timestamp']
                 
                 processed_orders.append(order_data)
 
+            logging.info(f"/api/kds/orders: Processamento concluído. Retornando {len(processed_orders)} pedidos.")
             return jsonify(processed_orders)
+        except OperationFailure as op_e: # More specific PyMongo operational error
+            logging.exception(f"/api/kds/orders: Erro de operação do MongoDB (OperationFailure) ao buscar pedidos: {op_e.details}")
+            return jsonify({"error": f"Erro de banco de dados ao carregar pedidos: {op_e.code}", "details": op_e.details}), 500
+        except ConnectionFailure as conn_e: # More specific PyMongo connection error
+            logging.exception(f"/api/kds/orders: Erro de conexão com MongoDB (ConnectionFailure) ao buscar pedidos: {conn_e}")
+            return jsonify({"error": "Erro de conexão com o banco de dados ao carregar pedidos."}), 503
         except Exception as e:
-            logging.exception("Erro ao buscar pedidos para a API KDS.")
-            return jsonify({"error": "Erro ao carregar pedidos."}), 500
+            # This will catch other errors during the find, sort, or processing loop
+            logging.exception("/api/kds/orders: Erro DENTRO DO TRY ao buscar/processar pedidos para a API KDS.")
+            return jsonify({"error": "Erro ao carregar pedidos (interno)."}), 500
     else:
-        logging.warning("/api/kds/orders: Coleção de pedidos (MongoDB) não está disponível.")
-        return jsonify({"error": "Serviço de banco de dados não disponível."}), 503
+        # This case means orders_collection was None when the function was called
+        logging.error("/api/kds/orders: orders_collection é None. Coleção de pedidos (MongoDB) não está disponível.")
+        return jsonify({"error": "Serviço de banco de dados não disponível (orders_collection is None)."}), 503
 
 # --- Execução da Aplicação ---
 if __name__ == '__main__':

@@ -15,13 +15,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Funções do KDS (Pedidos Pendentes) ---
     async function fetchKDSOrders() {
+        console.log("fetchKDSOrders CALLED. isKdsTabActive:", isKdsTabActive); // DEBUG
         if (!isKdsTabActive) {
-            // console.log("KDS tab not active, skipping fetch.");
+            console.log("KDS tab not active, skipping fetch.");
             return;
         }
-        // console.log("Fetching KDS orders...");
+        if (!kdsOrdersList) {
+            console.error("kdsOrdersList element not found in fetchKDSOrders!"); // DEBUG
+            return;
+        }
+        kdsOrdersList.innerHTML = '<li class="no-orders">Carregando pedidos...</li>'; // Show loading message
+        
+        const apiUrl = 'http://127.0.0.1:5000/api/kds/orders'; // Use absolute URL with correct port
+        console.log(`Attempting to fetch ${apiUrl}...`); // DEBUG
+        
         try {
-            const response = await fetch('/api/kds/orders');
+            const response = await fetch(apiUrl); // Use the apiUrl variable
+            console.log("Fetch response status:", response.status); // DEBUG
             if (!response.ok) {
                 console.error('Erro ao buscar pedidos KDS:', response.status, response.statusText);
                 kdsOrdersList.innerHTML = '<li class="no-orders error-message">Erro ao carregar pedidos. Tente novamente.</li>';

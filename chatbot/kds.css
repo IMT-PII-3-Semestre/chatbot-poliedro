@@ -1,203 +1,200 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
+/* --- Reset Básico e Estilos Globais --- */
 * {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
+    box-sizing: border-box; /* Garante que padding e border não aumentem o tamanho total do elemento */
 }
 
 body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f4f7f6;
-    color: #333;
-    line-height: 1.6;
+    font-family: 'Roboto', sans-serif; /* Fonte padrão */
+    background-color: #f4f7f6; /* Cor de fundo suave */
+    color: #333; /* Cor de texto principal */
+    line-height: 1.6; /* Espaçamento entre linhas para melhor legibilidade */
 }
 
+/* --- Cabeçalho Principal da Aplicação --- */
 .kds-header {
-    /* background-color: #ffffff; */ /* Removed to blend with kds-main background */
     color: #343a40;
-    /* padding: 15px 25px; */ /* Original padding, now relying on kds-main padding for horizontal/top */
-    padding-bottom: 15px; /* Space above the bottom border */
-    margin-bottom: 25px; /* Increased space below the header before orders */
-    /* border-radius: 8px; */ /* Removed */
-    /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); */ /* Removed */
-    border-bottom: 1px solid #dee2e6; /* Subtle border for separation */
+    padding-bottom: 15px; /* Espaço acima da borda inferior */
+    margin-bottom: 25px; /* Espaço abaixo do cabeçalho */
+    border-bottom: 1px solid #dee2e6; /* Borda sutil para separação */
 }
 
 .kds-header h1 {
-    font-size: 1.7em; /* Slightly increased for prominence */
+    font-size: 1.7em; /* Tamanho da fonte aumentado para destaque */
     font-weight: 600;
-    margin: 0; /* Remove default h1 margins */
+    margin: 0; /* Remove margens padrão do h1 */
 }
 
 /* --- Estilização da Navegação por Abas --- */
 .tabs {
     display: flex;
     justify-content: center; /* Centraliza os botões das abas */
-    background-color: #ffffff;
-    border-bottom: 1px solid #dee2e6;
-    margin-bottom: 25px;
-    padding: 0 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: #ffffff; /* Fundo branco para a barra de abas */
+    border-bottom: 1px solid #dee2e6; /* Linha divisória abaixo das abas */
+    margin-bottom: 25px; /* Espaço abaixo da barra de abas */
+    padding: 0 10px; /* Padding horizontal para não colar nas bordas da tela */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Sombra suave */
     width: 100%; /* Garante que a barra de navegação ocupe a largura total */
 }
 
 .nav-tab {
-    padding: 12px 25px;
+    padding: 12px 25px; /* Espaçamento interno dos botões de aba */
     margin: 0 5px; /* Pequeno espaço entre as abas */
-    border: none;
-    background-color: transparent;
-    cursor: pointer;
-    font-size: 1.05em;
-    color: #6c757d; /* Cor acinzentada para abas inativas */
-    border-bottom: 4px solid transparent; /* Borda transparente mais espessa para alinhamento */
-    transition: color 0.3s ease, border-bottom-color 0.3s ease;
-    text-align: center;
-    white-space: nowrap; /* Impede quebra de linha do texto */
+    border: none; /* Remove borda padrão do botão */
+    background-color: transparent; /* Fundo transparente */
+    cursor: pointer; /* Cursor de mão ao passar sobre */
+    font-size: 1.05em; /* Tamanho da fonte */
+    color: #6c757d; /* Cor para abas inativas */
+    border-bottom: 4px solid transparent; /* Borda inferior transparente para alinhamento visual */
+    transition: color 0.3s ease, border-bottom-color 0.3s ease; /* Transição suave para hover/active */
+    text-align: center; /* Centraliza o texto */
+    white-space: nowrap; /* Impede quebra de linha do texto da aba */
 }
 
 .nav-tab:hover {
-    color: #495057;
+    color: #495057; /* Cor do texto ao passar o mouse */
     border-bottom-color: #e9ecef; /* Sublinhado sutil ao passar o mouse */
 }
 
 .nav-tab.active {
-    color: #0d6efd; /* Azul primário do Bootstrap para aba ativa */
-    border-bottom-color: #0d6efd; /* Sublinhado correspondente para aba ativa */
-    font-weight: 600;
+    color: #0d6efd; /* Cor para aba ativa */
+    border-bottom-color: #0d6efd; /* Sublinhado para aba ativa */
+    font-weight: 600; /* Texto em negrito para aba ativa */
 }
 
 .nav-tab i { /* Estiliza ícones dentro das abas */
-    margin-right: 8px;
-    font-size: 0.95em; /* Ajusta tamanho do ícone relativo ao texto */
+    margin-right: 8px; /* Espaço à direita do ícone */
+    font-size: 0.95em; /* Ajusta tamanho do ícone relativo ao texto da aba */
 }
 
-/* Troca de Visão Principal */
+/* --- Controle de Exibição das Views Principais --- */
 .main-view {
-    display: none; /* Esconde todas as visões por padrão */
-    padding: 20px;
+    display: none; /* Esconde todas as views por padrão */
+    padding: 20px; /* Espaçamento interno para o conteúdo da view */
 }
 .main-view.active-view {
-    display: block; /* Mostra a visão ativa */
+    display: block; /* Mostra apenas a view ativa */
 }
 
-/* Estilos Específicos do KDS */
+/* --- Estilos Específicos da View KDS (Kitchen Display System) --- */
 .kds-main {
-    background-color: #f8f9fa; /* Fundo levemente esbranquiçado para a visão */
+    background-color: #f8f9fa; /* Fundo para a área principal do KDS */
 }
 
-.kds-orders-section {
-    /* Container para a grade de pedidos */
-}
+/* .kds-orders-section  Pode ser usado para espaçamentos ou títulos futuros */
 
 .kds-orders-container {
-    display: flex;
+    display: flex; /* Usa flexbox para alinhar os cards de pedido */
     flex-wrap: wrap; /* Permite que os cards quebrem para a próxima linha */
-    gap: 20px; /* Espaço entre os cards */
-    padding: 0;
-    list-style-type: none;
+    gap: 20px; /* Espaço entre os cards de pedido */
+    padding: 0; /* Remove padding padrão de listas */
+    list-style-type: none; /* Remove marcadores de lista */
 }
 
-.kds-order-item {
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    padding: 20px;
+.kds-order-item { /* Card individual de pedido */
+    background-color: #ffffff; /* Fundo branco do card */
+    border-radius: 10px; /* Bordas arredondadas */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra sutil */
+    padding: 20px; /* Espaçamento interno do card */
     display: flex;
-    flex-direction: column;
-    border-left: 6px solid #0d6efd; /* Borda de destaque colorida (azul) */
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    position: relative; /* Para posicionamento absoluto interno */
-    overflow: hidden; /* Esconde overflow para efeitos potenciais */
-    width: 300px; /* Largura fixa para cada card de pedido, ajuste conforme necessário */
-    justify-content: space-between;
+    flex-direction: column; /* Itens do card empilhados verticalmente */
+    border-left: 6px solid #0d6efd; /* Borda de destaque colorida */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Animação suave para hover */
+    position: relative;
+    overflow: hidden; /* Esconde conteúdo que transborda */
+    width: 300px; /* Largura fixa para cada card de pedido */
+    justify-content: space-between; /* Distribui espaço entre header, body e footer */
 }
 
 .kds-order-item:hover {
-    transform: translateY(-3px); /* Leve elevação ao passar o mouse */
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-3px); /* Leve elevação do card ao passar o mouse */
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); /* Sombra mais pronunciada no hover */
 }
 
-/* Opcional: Animação para novos itens */
+/* Animação para novos itens adicionados à lista KDS */
 .kds-order-item.new {
     animation: fadeInSlideUp 0.5s ease-out forwards;
-    border-left-color: #ffc107; /* Borda amarela para novos */
+    border-left-color: #ffc107; /* Borda amarela para destacar novos pedidos */
 }
 
-@keyframes fadeInSlideUp {
+@keyframes fadeInSlideUp { /* Define a animação */
     from {
-        opacity: 0;
-        transform: translateY(10px);
+        opacity: 0; /* Começa transparente */
+        transform: translateY(10px); /* Começa levemente abaixo */
     }
     to {
-        opacity: 1;
-        transform: translateY(0);
+        opacity: 1; /* Termina opaco */
+        transform: translateY(0); /* Termina na posição normal */
     }
 }
 
-.kds-order-item .order-header {
+.kds-order-item .order-header { /* Cabeçalho do card de pedido */
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
+    justify-content: space-between; /* ID à esquerda, tempo à direita */
+    align-items: center; /* Alinha verticalmente os itens do cabeçalho */
+    margin-bottom: 10px; /* Espaço abaixo do cabeçalho */
+    padding-bottom: 10px; /* Espaço acima da linha divisória */
+    border-bottom: 1px solid #eee; /* Linha divisória sutil */
 }
 
 .kds-order-item .order-id {
-    font-weight: bold;
-    font-size: 1.1em;
+    font-weight: bold; /* ID do pedido em negrito */
+    font-size: 1.1em; /* Tamanho da fonte do ID */
     color: #333;
 }
 
 .kds-order-item .order-time {
-    font-size: 0.9em;
+    font-size: 0.9em; /* Tamanho da fonte do horário */
     color: #555;
 }
-.kds-order-item .order-time .fas {
-    margin-right: 5px;
+.kds-order-item .order-time .fas { /* Ícone de relógio */
+    margin-right: 5px; /* Espaço à direita do ícone */
 }
 
-.kds-order-item .order-body .order-item-list {
-    list-style-type: none;
-    padding-left: 0;
-    margin-bottom: 10px;
+.kds-order-item .order-body .order-item-list { /* Lista de itens dentro do pedido */
+    list-style-type: none; /* Remove marcadores de lista */
+    padding-left: 0; /* Remove padding padrão da lista */
+    margin-bottom: 10px; /* Espaço abaixo da lista de itens */
 }
 
 .kds-order-item .order-body .order-item-list li {
-    padding: 3px 0;
-    color: #444;
+    padding: 3px 0; /* Espaçamento vertical entre os itens da lista */
+    color: #444; /* Cor do texto dos itens */
 }
 
-.kds-order-item .order-footer {
-    margin-top: auto; /* Empurra o rodapé para baixo */
-    padding-top: 15px; /* Aumentado para mais espaço */
-    border-top: 1px solid #eee;
+.kds-order-item .order-footer { /* Rodapé do card de pedido */
+    margin-top: auto; /* Empurra o rodapé para a parte inferior do card */
+    padding-top: 15px; /* Espaço acima do rodapé */
+    border-top: 1px solid #eee; /* Linha divisória sutil acima do rodapé */
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px; /* Adiciona espaço entre os elementos do rodapé */
+    justify-content: space-between; /* Status à esquerda, ações à direita */
+    align-items: center; /* Alinha verticalmente os itens do rodapé */
+    gap: 10px; /* Espaço entre os elementos do rodapé (status e botões) */
 }
 
 .kds-order-item .order-status {
     font-weight: bold;
-    font-size: 0.95em; /* Ajuste de tamanho */
+    font-size: 0.95em;
     flex-shrink: 0; /* Evita que o status seja espremido */
 }
+/* Cores para os diferentes status dos pedidos */
 .status-pendente { color: #ff9800; /* Laranja */ }
-.status-em_preparo { color: #2196f3; /* Azul */ } /* Se usar "Em Preparo" */
-.status-em-preparo { color: #2196f3; /* Azul */ } /* Se usar "Em-Preparo" */
+.status-em_preparo { color: #2196f3; /* Azul (se usar "Em Preparo" com underscore) */ }
+.status-em-preparo { color: #2196f3; /* Azul (se usar "Em-Preparo" com hífen) */ }
 .status-pronto { color: #4caf50; /* Verde */ }
 
-/* Container para os botões de ação do KDS para melhor agrupamento */
+/* Container para os botões de ação do KDS */
 .kds-order-item .order-actions {
     display: flex;
     gap: 8px; /* Espaço entre os botões */
-    flex-grow: 1; /* Permite que este container cresça para preencher o espaço */
-    justify-content: flex-end; /* Alinha os botões à direita dentro deste container */
+    flex-grow: 1; /* Permite que este container cresça */
+    justify-content: flex-end; /* Alinha os botões à direita */
 }
 
-.btn-kds-action {
+.btn-kds-action { /* Estilo base para botões de ação do KDS */
     padding: 8px 12px;
     font-size: 0.9em;
     border-radius: 5px;
@@ -209,15 +206,14 @@ body {
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-width: 90px; /* Reduzido para um pouco mais de flexibilidade */
-    /* flex-shrink: 0; */ /* Removido para permitir que os botões encolham se necessário */
+    min-width: 90px; /* Largura mínima */
 }
-.btn-kds-action i { /* Se você adicionar ícones aos botões */
+.btn-kds-action i { /* Estilo para ícones dentro dos botões de ação */
     margin-right: 5px;
 }
 
 .btn-mark-preparando {
-    background-color: #17a2b8; /* Azul info (Bootstrap-like) */
+    background-color: #17a2b8; /* Azul "info" */
     color: white;
     border-color: #17a2b8;
 }
@@ -227,7 +223,7 @@ body {
 }
 
 .btn-mark-pronto {
-    background-color: #28a745; /* Verde success (Bootstrap-like) */
+    background-color: #28a745; /* Verde "success" */
     color: white;
     border-color: #28a745;
 }
@@ -240,7 +236,7 @@ body {
 }
 
 
-/* --- Mensagem de Nenhum Pedido --- */
+/* --- Mensagem de "Nenhum Pedido" --- */
 .no-orders {
     width: 100%;
     text-align: center;
@@ -250,19 +246,17 @@ body {
     background-color: #ffffff;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    grid-column: 1 / -1; /* Ocupa todas as colunas da grade */
     border: 1px dashed #ced4da;
 }
 
-/* Estilos Específicos da Visão Admin */
-/* Apply grid layout and other admin-specific styles ONLY when the admin view is active */
-.admin-main.active-view {
-    display: grid; /* Usa grid para layout */
-    grid-template-columns: 1fr; /* Padrão para uma coluna */
+/* --- Estilos Específicos da View Admin --- */
+.admin-main.active-view { /* Aplica layout grid apenas quando a view admin está ativa */
+    display: grid;
+    grid-template-columns: 1fr; /* Padrão para uma coluna (mobile-first) */
     gap: 25px;
 }
 
-/* Estilos do Card (usado no formulário e lista) */
+/* Estilos do Card (usado no formulário e lista da view Admin) */
 .card {
     background-color: #ffffff;
     border: 1px solid #e0e0e0;
@@ -271,7 +265,7 @@ body {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
-.form-section h2, .list-section h2 {
+.form-section h2, .list-section h2 { /* Títulos das seções no Admin */
     font-size: 1.4em;
     color: #34495e;
     margin-bottom: 20px;
@@ -282,7 +276,7 @@ body {
     gap: 10px;
 }
 
-.admin-form-group {
+.admin-form-group { /* Grupo de formulário (label + input) */
     margin-bottom: 18px;
 }
 
@@ -294,7 +288,7 @@ body {
 }
 
 .admin-form-group input[type="text"],
-.admin-form-group input[type="number"] { /* Aplica a ambos os tipos */
+.admin-form-group input[type="number"] { /* Inputs de texto e número */
     width: 100%;
     padding: 10px 12px;
     border: 1px solid #ccc;
@@ -308,13 +302,13 @@ body {
     outline: none;
 }
 
-.admin-form-actions {
+.admin-form-actions { /* Container para botões de ação do formulário */
     margin-top: 20px;
     display: flex;
     gap: 10px;
 }
 
-/* Estilos Gerais de Botão (usados no Admin) */
+/* --- Estilos Gerais de Botão (usados na view Admin) --- */
 .btn {
     padding: 10px 18px;
     border: none;
@@ -327,7 +321,7 @@ body {
     align-items: center;
     gap: 8px;
 }
-.btn i {
+.btn i { /* Ícones dentro dos botões */
     font-size: 1.1em;
 }
 
@@ -358,7 +352,7 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.btn-warning {
+.btn-warning { /* Botão de aviso/editar */
     background-color: #f39c12;
     color: white;
 }
@@ -367,66 +361,66 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Mensagens de feedback do formulário Admin */
+/* --- Mensagens de feedback do formulário Admin --- */
 .admin-form-message {
     margin-top: 15px;
     font-size: 0.9em;
     padding: 8px;
     border-radius: 4px;
-    display: none; /* Escondido por padrão */
+    display: none; /* Escondido por padrão, exibido via JS */
 }
-.admin-form-message.success {
+.admin-form-message.success { /* Mensagem de sucesso */
     background-color: #e8f5e9;
     color: #2e7d32;
     border: 1px solid #a5d6a7;
     display: block;
 }
-.admin-form-message.error {
+.admin-form-message.error { /* Mensagem de erro */
     background-color: #ffebee;
     color: #c62828;
     border: 1px solid #ef9a9a;
     display: block;
 }
 
-/* Estilos da Tabela do Cardápio */
+/* --- Estilos da Tabela do Cardápio (View Admin) --- */
 #menu-table-container {
-    overflow-x: auto; /* Permite rolagem horizontal se necessário */
+    overflow-x: auto; /* Permite rolagem horizontal se a tabela for muito larga */
 }
 
 #menu-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: collapse; /* Remove espaços entre bordas das células */
     margin-top: 15px;
 }
 
 #menu-table th, #menu-table td {
     padding: 12px 15px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #eee; /* Linha divisória entre linhas da tabela */
 }
 
-#menu-table th {
+#menu-table th { /* Cabeçalho da tabela */
     background-color: #f8f9fa;
     font-weight: 600;
     color: #444;
 }
 
-#menu-table tbody tr:hover {
+#menu-table tbody tr:hover { /* Efeito hover nas linhas do corpo da tabela */
     background-color: #f1f3f5;
 }
 
-#menu-table td:last-child { /* Coluna de Ações */
-    text-align: right;
+#menu-table td:last-child { /* Célula de Ações (última coluna) */
+    text-align: right; /* Alinha botões de ação à direita */
 }
 
-.action-buttons {
+.action-buttons { /* Container para botões de ação na tabela */
     display: flex;
     gap: 8px;
-    justify-content: flex-end;
+    justify-content: flex-end; /* Alinha botões à direita */
 }
 
-.action-buttons .btn {
-    padding: 5px 10px; /* Botões menores para ações na tabela */
+.action-buttons .btn { /* Botões de ação menores para a tabela */
+    padding: 5px 10px;
     font-size: 0.85em;
 }
 .action-buttons .btn i {
@@ -434,18 +428,18 @@ body {
     margin-right: 4px; /* Espaço entre ícone e texto (se houver) */
 }
 
-.no-items-message { /* Mensagem exibida quando a tabela está vazia */
+.no-items-message { /* Mensagem exibida quando a tabela de cardápio está vazia */
     text-align: center;
     color: #777;
     font-style: italic;
     padding: 20px;
 }
 
-/* Responsividade */
+/* --- Responsividade --- */
 @media (min-width: 768px) {
-    /* Apply two-column layout for admin view ONLY when it is active and screen is larger */
+    /* Layout de duas colunas para view Admin em telas maiores */
     .admin-main.active-view {
-        grid-template-columns: 350px 1fr; /* Layout de duas colunas em telas maiores: Formulário à esquerda, tabela à direita */
+        grid-template-columns: 350px 1fr; /* Formulário à esquerda, tabela à direita */
     }
 }
 
@@ -460,62 +454,66 @@ body {
     .main-view {
         padding: 15px;
     }
-    .card {
+    .card { /* Cards em geral (KDS e Admin) */
         padding: 15px;
     }
-    .form-section h2, .list-section h2 {
+    .form-section h2, .list-section h2 { /* Títulos de seção no Admin */
         font-size: 1.2em;
     }
 
     /* Ajustes KDS para telas pequenas */
-    .kds-orders-container {
-        grid-template-columns: 1fr; /* Uma coluna */
+    .kds-orders-container { /* Cards de pedido em uma coluna */
+       /* A largura dos cards (.kds-order-item) já os fará empilhar naturalmente com flex-wrap */
     }
     .kds-order-item {
+        width: 100%; /* Ocupa toda a largura disponível */
         padding: 12px 15px;
     }
-    .kds-order-item .order-header strong {
+    .kds-order-item .order-id { /* ID do pedido no KDS */
         font-size: 1em;
     }
-     .kds-order-item .order-items {
+     .kds-order-item .order-body .order-item-list { /* Itens do pedido no KDS */
         font-size: 0.9em;
     }
-    .kds-button {
+    .btn-kds-action { /* Botões de ação do KDS */
         font-size: 0.8em;
         padding: 6px 10px;
+        min-width: 75px; /* Reduz largura mínima */
     }
 
     /* Ajustes Admin para telas pequenas */
-    /* If admin-main needs specific adjustments for small screens when active,
-       ensure the selector is .admin-main.active-view if it involves display or major layout overrides.
-       However, the existing rule for grid-template-columns: 1fr for .admin-main.active-view (mobile-first)
-       is likely sufficient, and this media query might only adjust child elements or general .btn styles.
-       The existing .admin-main { grid-template-columns: 1fr; } for small screens is fine if it's within
-       .admin-main.active-view context or if the general .admin-main.active-view already sets it to 1fr.
-    */
-    .admin-main.active-view { /* Ensuring consistency if any specific small-screen overrides for admin layout are needed */
-        grid-template-columns: 1fr; /* Empilha formulário e tabela - this is already the default for .admin-main.active-view */
+    .admin-main.active-view { /* Garante uma coluna para Admin */
+        grid-template-columns: 1fr;
     }
-    .btn {
+    .btn { /* Botões gerais (usados no Admin) */
         padding: 8px 15px;
         font-size: 0.9em;
     }
-    #menu-table th, #menu-table td {
+    #menu-table th, #menu-table td { /* Células da tabela do cardápio */
         padding: 10px 8px;
         font-size: 0.9em;
     }
-    .action-buttons .btn {
+    .action-buttons .btn { /* Botões de ação na tabela do cardápio */
         padding: 4px 8px;
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px) { /* Telas médias, como tablets em modo retrato */
     /* Ajustes intermediários para a grade KDS */
     .kds-orders-container {
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Largura mínima um pouco menor */
-        gap: 15px;
+        /* Mantém o comportamento de flex-wrap, os cards se ajustarão */
+        gap: 15px; /* Espaçamento um pouco menor */
     }
     .kds-order-item {
+        width: calc(50% - 7.5px); /* Tenta exibir dois cards por linha, ajustando pelo gap */
+        /* Se preferir que eles continuem com 300px e quebrem, remova esta linha */
         padding: 15px;
     }
+    /* Se a regra acima para .kds-order-item (width: calc) não for desejada,
+       e você quiser que eles mantenham a largura de 300px e quebrem,
+       pode ser necessário ajustar o .kds-orders-container para usar grid
+       com auto-fill e minmax para melhor controle em diferentes tamanhos.
+       Ex: grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+       Mas como está usando flex, o comportamento padrão de wrap já deve funcionar.
+    */
 }

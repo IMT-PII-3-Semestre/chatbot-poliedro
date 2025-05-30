@@ -14,6 +14,9 @@
         <button id="tab-kds" class="nav-tab active" data-target="kds-view">
             <i class="fas fa-clipboard-list"></i> Pedidos Pendentes
         </button>
+        <button id="tab-finished" class="nav-tab" data-target="finished-orders-view">
+            <i class="fas fa-check-circle"></i> Pedidos Finalizados
+        </button>
         <button id="tab-admin" class="nav-tab" data-target="admin-view">
             <i class="fas fa-edit"></i> Gerenciar Cardápio
         </button>
@@ -28,6 +31,19 @@
             <ul id="kds-orders-list" class="kds-orders-container">
                 <!-- Pedidos serão inseridos aqui pelo kds.js -->
                 <li class="no-orders">Carregando pedidos...</li>
+            </ul>
+        </section>
+    </main>
+
+    <!-- Finished Orders View -->
+    <main id="finished-orders-view" class="main-view kds-main"> <!-- Inicia escondida -->
+        <header class="kds-header">
+            <h1><i class="fas fa-check-circle"></i> Pedidos Finalizados</h1>
+        </header>
+        <section class="kds-orders-section">
+            <ul id="finished-orders-list" class="kds-orders-container">
+                <!-- Pedidos finalizados serão inseridos aqui pelo kds.js -->
+                <li class="no-orders">Carregando pedidos finalizados...</li>
             </ul>
         </section>
     </main>

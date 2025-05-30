@@ -4,3 +4,4 @@ requests==2.32.3
 python-dotenv>=0.9.9
 pymongo[srv]==4.7.3
 dnspython>=2.0.0
+pytz

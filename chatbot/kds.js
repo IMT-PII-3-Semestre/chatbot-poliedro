@@ -1,72 +1,125 @@
 document.addEventListener('DOMContentLoaded', () => {
     const kdsView = document.getElementById('kds-view');
     const kdsOrdersList = document.getElementById('kds-orders-list');
+    const finishedOrdersList = document.getElementById('finished-orders-list');
     const notificationSound = document.getElementById('notification-sound');
-    const tabKds = document.getElementById('tab-kds');
-    const tabAdmin = document.getElementById('tab-admin'); // Added for clarity if needed elsewhere
-    const adminView = document.getElementById('admin-view'); // Added for clarity if needed elsewhere
+    // const tabKds = document.getElementById('tab-kds'); // Not directly used, navTabs handles it
+    // const tabFinished = document.getElementById('tab-finished'); // Not directly used
+    // const tabAdmin = document.getElementById('tab-admin'); // Not directly used
+    // const adminView = document.getElementById('admin-view'); // Not directly used
     const navTabs = document.querySelectorAll('.nav-tab');
 
-
-    let displayedOrderIds = new Set();
-    let isKdsTabActive = true; // Assume KDS tab is active initially as per HTML
+    let displayedKdsOrderIds = new Set();
+    let displayedFinishedOrderIds = new Set();
+    let activeTab = 'kds-view'; // Default, will be confirmed on load
     let pollingIntervalId = null;
     const POLLING_INTERVAL = 15000; // 15 segundos
 
-    // --- Funções do KDS (Pedidos Pendentes) ---
-    async function fetchKDSOrders() {
-        console.log("fetchKDSOrders CALLED. isKdsTabActive:", isKdsTabActive); // DEBUG
-        if (!isKdsTabActive) {
-            console.log("KDS tab not active, skipping fetch.");
+    // --- Funções de Fetch e Display ---
+
+    // Fetches orders for a single status (e.g., "Pronto")
+    async function fetchSingleStatusOrders(status, targetListElement, displayedIdsSet) {
+        if (!targetListElement) {
+            console.error(`Target list element not found for status ${status}!`);
             return;
         }
-        if (!kdsOrdersList) {
-            console.error("kdsOrdersList element not found in fetchKDSOrders!"); // DEBUG
-            return;
+        if (!targetListElement.querySelector('.kds-order-item') && !targetListElement.querySelector('.error-message')) {
+            targetListElement.innerHTML = `<li class="no-orders">Carregando pedidos (${status.toLowerCase()})...</li>`;
         }
-        kdsOrdersList.innerHTML = '<li class="no-orders">Carregando pedidos...</li>'; // Show loading message
         
-        const apiUrl = 'http://127.0.0.1:5000/api/kds/orders'; // Use absolute URL with correct port
-        console.log(`Attempting to fetch ${apiUrl}...`); // DEBUG
+        const apiUrl = `http://127.0.0.1:5000/api/kds/orders?status=${status}`;
+        console.log(`Attempting to fetch ${apiUrl}...`);
         
         try {
-            const response = await fetch(apiUrl); // Use the apiUrl variable
-            console.log("Fetch response status:", response.status); // DEBUG
+            const response = await fetch(apiUrl);
             if (!response.ok) {
-                console.error('Erro ao buscar pedidos KDS:', response.status, response.statusText);
-                kdsOrdersList.innerHTML = '<li class="no-orders error-message">Erro ao carregar pedidos. Tente novamente.</li>';
+                console.error(`Erro ao buscar pedidos (status ${status}):`, response.status, response.statusText);
+                targetListElement.innerHTML = `<li class="no-orders error-message">Erro ao carregar pedidos (${status.toLowerCase()}). Tente novamente.</li>`;
                 return;
             }
             const orders = await response.json();
-            displayKDSOrders(orders);
+            displayOrders(orders, targetListElement, displayedIdsSet); // Pass only necessary params
         } catch (error) {
-            console.error('Falha na requisição de pedidos KDS:', error);
-            kdsOrdersList.innerHTML = '<li class="no-orders error-message">Falha ao conectar com o servidor.</li>';
+            console.error(`Falha na requisição de pedidos (status ${status}):`, error);
+            targetListElement.innerHTML = `<li class="no-orders error-message">Falha ao conectar com o servidor (${status.toLowerCase()}).</li>`;
         }
     }
 
-    function displayKDSOrders(orders) {
-        if (!kdsOrdersList) return;
+    // Fetches, combines, and sorts orders for the KDS view (Pendente & Em Preparo)
+    async function fetchAndDisplayKdsViewOrders() {
+        if (!kdsOrdersList.querySelector('.kds-order-item') && !kdsOrdersList.querySelector('.error-message')) {
+            kdsOrdersList.innerHTML = `<li class="no-orders">Carregando pedidos ativos...</li>`;
+        }
+
+        try {
+            const [pendenteResponse, emPreparoResponse] = await Promise.all([
+                fetch(`http://127.0.0.1:5000/api/kds/orders?status=Pendente`),
+                fetch(`http://127.0.0.1:5000/api/kds/orders?status=Em Preparo`)
+            ]);
+
+            let pendenteOrders = [];
+            let emPreparoOrders = [];
+
+            if (pendenteResponse.ok) {
+                pendenteOrders = await pendenteResponse.json();
+            } else {
+                console.error('Erro ao buscar Pedente:', pendenteResponse.status, pendenteResponse.statusText);
+                // Optionally, handle partial failure, or fail all if one fails
+            }
+
+            if (emPreparoResponse.ok) {
+                emPreparoOrders = await emPreparoResponse.json();
+            } else {
+                console.error('Erro ao buscar Em Preparo:', emPreparoResponse.status, emPreparoResponse.statusText);
+                // Optionally, handle partial failure
+            }
+            
+            // If both failed, show a general error
+            if (!pendenteResponse.ok && !emPreparoResponse.ok) {
+                 kdsOrdersList.innerHTML = `<li class="no-orders error-message">Erro ao carregar pedidos ativos. Tente novamente.</li>`;
+                 return;
+            }
+
+            const combinedOrders = [...pendenteOrders, ...emPreparoOrders];
+            // Sort by timestamp ascending (oldest first)
+            combinedOrders.sort((a, b) => new Date(a.timestamp_iso) - new Date(b.timestamp_iso)); 
+
+            displayOrders(combinedOrders, kdsOrdersList, displayedKdsOrderIds);
+
+        } catch (error) {
+            console.error(`Falha na requisição de pedidos para KDS View:`, error);
+            kdsOrdersList.innerHTML = `<li class="no-orders error-message">Falha ao conectar com o servidor (KDS View).</li>`;
+        }
+    }
+
+
+    function displayOrders(orders, targetListElement, displayedIdsSet) {
+        if (!targetListElement) return;
 
         if (orders.length === 0) {
-            kdsOrdersList.innerHTML = '<li class="no-orders">Nenhum pedido pendente no momento.</li>';
-            displayedOrderIds.clear(); // Clear if no orders
+            if (targetListElement === kdsOrdersList) {
+                targetListElement.innerHTML = `<li class="no-orders">Nenhum pedido pendente ou em preparo no momento.</li>`;
+            } else if (targetListElement === finishedOrdersList) {
+                targetListElement.innerHTML = `<li class="no-orders">Nenhum pedido finalizado no momento.</li>`;
+            } else {
+                targetListElement.innerHTML = `<li class="no-orders">Nenhum pedido no momento.</li>`;
+            }
+            displayedIdsSet.clear();
             return;
         }
 
         const newOrderIds = new Set();
         let newOrdersArrived = false;
-
-        // Build new list elements
         const fragment = document.createDocumentFragment();
+
         orders.forEach(order => {
             newOrderIds.add(order._id);
-            if (!displayedOrderIds.has(order._id)) {
+            if (!displayedIdsSet.has(order._id)) {
                 newOrdersArrived = true;
             }
 
             const listItem = document.createElement('li');
-            listItem.className = 'kds-order-item card'; // Assuming 'card' class for styling
+            listItem.className = 'kds-order-item card';
             listItem.dataset.orderId = order._id;
 
             let itemsHtml = '<ul class="order-item-list">';
@@ -75,8 +128,25 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             itemsHtml += '</ul>';
 
-            // Format time: HH:MM
-            const orderTime = order.timestamp_iso ? new Date(order.timestamp_iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+            const orderTime = order.timestamp_iso 
+                ? new Date(order.timestamp_iso).toLocaleTimeString('pt-BR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    timeZone: 'America/Sao_Paulo' 
+                  }) 
+                : 'N/A';
+
+            let actionButtonsHtml = '';
+            // Action buttons only for "Pendente" or "Em Preparo" statuses
+            if (order.status === 'Pendente' || order.status === 'Em Preparo') {
+                actionButtonsHtml = `
+                    <button class="btn-kds-action btn-mark-preparando" data-id="${order._id}" ${order.status === 'Em Preparo' ? 'disabled' : ''}>Preparando</button>
+                    <button class="btn-kds-action btn-mark-pronto" data-id="${order._id}">Pronto</button>
+                `;
+            } else if (order.status === 'Pronto') {
+                // No buttons for "Pronto" orders in this example, but could add "Reabrir" here
+            }
+
 
             listItem.innerHTML = `
                 <div class="order-header">
@@ -89,115 +159,130 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="order-footer">
                     <span class="order-status status-${order.status.toLowerCase().replace(/\s+/g, '-')}">${order.status}</span>
                     <div class="order-actions"> 
-                        <button class="btn-kds-action btn-mark-preparando" data-id="${order._id}">Preparando</button>
-                        <button class="btn-kds-action btn-mark-pronto" data-id="${order._id}">Pronto</button>
+                        ${actionButtonsHtml}
                     </div>
                 </div>
             `;
             fragment.appendChild(listItem);
         });
         
-        kdsOrdersList.innerHTML = ''; // Clear previous content
-        kdsOrdersList.appendChild(fragment);
+        targetListElement.innerHTML = ''; // Clear previous content
+        targetListElement.appendChild(fragment);
 
-        // Update the set of displayed order IDs
-        displayedOrderIds = newOrderIds;
+        // Update the set of displayed order IDs for the specific list
+        if (targetListElement === kdsOrdersList) displayedKdsOrderIds = newOrderIds;
+        if (targetListElement === finishedOrdersList) displayedFinishedOrderIds = newOrderIds;
 
-        if (newOrdersArrived && notificationSound) {
+
+        // Play sound only for new orders arriving in the KDS view (Pendente/Em Preparo)
+        if (newOrdersArrived && notificationSound && targetListElement === kdsOrdersList) {
             notificationSound.play().catch(e => console.warn("Erro ao tocar som de notificação:", e));
         }
 
-        // Add event listeners for action buttons (example)
-        document.querySelectorAll('.btn-mark-preparando').forEach(button => {
-            button.addEventListener('click', () => handleOrderStatusUpdate(button.dataset.id, 'Em Preparo'));
+        document.querySelectorAll(`#${targetListElement.id} .btn-mark-preparando`).forEach(button => {
+            button.removeEventListener('click', handlePreparandoClick);
+            button.addEventListener('click', handlePreparandoClick);
         });
-        document.querySelectorAll('.btn-mark-pronto').forEach(button => {
-            button.addEventListener('click', () => handleOrderStatusUpdate(button.dataset.id, 'Pronto'));
+        document.querySelectorAll(`#${targetListElement.id} .btn-mark-pronto`).forEach(button => {
+            button.removeEventListener('click', handleProntoClick);
+            button.addEventListener('click', handleProntoClick);
         });
+    }
+    
+    function handlePreparandoClick(event) {
+        handleOrderStatusUpdate(event.target.dataset.id, 'Em Preparo');
+    }
+    function handleProntoClick(event) {
+        handleOrderStatusUpdate(event.target.dataset.id, 'Pronto');
     }
 
     async function handleOrderStatusUpdate(orderId, newStatus) {
-        console.log(`Atualizar pedido ${orderId} para ${newStatus}`);
-        // TODO: Implement API call to update order status
-        // Ex: await fetch(`/api/orders/${orderId}/status`, { method: 'PUT', body: JSON.stringify({ status: newStatus }), headers: {'Content-Type': 'application/json'} });
-        // After successful update, re-fetch orders:
-        // fetchKDSOrders();
-        alert(`Funcionalidade "Marcar ${newStatus}" para pedido ${orderId} ainda não implementada no backend.`);
-    }
+        console.log(`Attempting to update order ${orderId} to status ${newStatus}`);
+        const apiUrl = `http://127.0.0.1:5000/api/kds/order/${orderId}/status`;
 
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus }),
+            });
 
-    function startKDSPolling() {
-        if (pollingIntervalId) {
-            clearInterval(pollingIntervalId);
+            const responseData = await response.json();
+
+            if (response.ok) {
+                console.log(`Order ${orderId} status updated to ${newStatus} successfully:`, responseData.message);
+                
+                // Refresh the KDS view (Pendente & Em Preparo)
+                fetchAndDisplayKdsViewOrders();
+                
+                // Refresh the Finished Orders view if it's active or if an order was moved to/from Pronto
+                if (activeTab === 'finished-orders-view' || newStatus === 'Pronto' || (orderId && displayedFinishedOrderIds.has(orderId) && newStatus !== 'Pronto')) {
+                    fetchSingleStatusOrders('Pronto', finishedOrdersList, displayedFinishedOrderIds);
+                }
+
+            } else {
+                console.error(`Error updating order ${orderId} status: ${response.status} ${response.statusText}`, responseData);
+                alert(`Erro ao atualizar status do pedido: ${responseData.error || response.statusText}`);
+            }
+        } catch (error) {
+            console.error(`Network or other error updating order ${orderId} status:`, error);
+            alert('Erro de rede ao tentar atualizar o status do pedido. Verifique a conexão com o servidor.');
         }
-        fetchKDSOrders(); // Fetch immediately
-        pollingIntervalId = setInterval(fetchKDSOrders, POLLING_INTERVAL);
-        // console.log("KDS polling started.");
     }
 
-    function stopKDSPolling() {
+    function startPollingForActiveTab() {
+        stopPolling(); 
+        if (activeTab === 'kds-view') {
+            fetchAndDisplayKdsViewOrders(); // Initial fetch
+            pollingIntervalId = setInterval(fetchAndDisplayKdsViewOrders, POLLING_INTERVAL);
+        } else if (activeTab === 'finished-orders-view') {
+            fetchSingleStatusOrders('Pronto', finishedOrdersList, displayedFinishedOrderIds); // Initial fetch
+            pollingIntervalId = setInterval(() => fetchSingleStatusOrders('Pronto', finishedOrdersList, displayedFinishedOrderIds), POLLING_INTERVAL);
+        }
+    }
+
+    function stopPolling() {
         if (pollingIntervalId) {
             clearInterval(pollingIntervalId);
             pollingIntervalId = null;
-            // console.log("KDS polling stopped.");
         }
     }
 
-    // --- Gerenciamento de Abas (simplificado, já que você tem um no kds.html) ---
-    // Este código assume que a lógica de troca de abas no seu kds.html principal
-    // já define qual view está ativa. Vamos nos basear no botão 'tab-kds'.
-
-    // --- Initial Tab State & Polling ---
-    if (tabKds && tabKds.classList.contains('active')) {
-        isKdsTabActive = true;
-        startKDSPolling();
-    } else {
-        isKdsTabActive = false;
-        // If admin tab is active by default (it's not in the HTML, but for completeness)
-        if (tabAdmin && tabAdmin.classList.contains('active')) {
-            if (adminView && adminView.classList.contains('active-view')) { // Ensure view is also active
-                fetchMenu();
-            }
-        }
-    }
-
-    // --- Unified Tab Click Handler ---
     navTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             const targetViewId = tab.dataset.target;
-            const targetView = document.getElementById(targetViewId);
+            activeTab = targetViewId; 
 
-            // Deactivate all views and tabs
             document.querySelectorAll('.main-view').forEach(view => view.classList.remove('active-view'));
             navTabs.forEach(t => t.classList.remove('active'));
 
-            // Activate the clicked tab and its corresponding view
+            const targetView = document.getElementById(targetViewId);
             if (targetView) {
                 targetView.classList.add('active-view');
             }
             tab.classList.add('active');
 
-            // Manage KDS polling and fetch menu for admin tab
-            if (targetViewId === 'kds-view') {
-                if (!isKdsTabActive) {
-                    isKdsTabActive = true;
-                    if (kdsOrdersList) kdsOrdersList.innerHTML = '<li class="no-orders">Carregando pedidos...</li>';
-                    startKDSPolling();
-                }
-            } else { // Other tabs (e.g., admin-view)
-                if (isKdsTabActive) {
-                    isKdsTabActive = false;
-                    stopKDSPolling();
-                }
-                if (targetViewId === 'admin-view') {
-                    fetchMenu(); // Fetch menu when admin tab is activated
-                }
+            startPollingForActiveTab(); 
+
+            if (targetViewId === 'admin-view') {
+                fetchMenu(); 
             }
         });
     });
 
+    const initiallyActiveTabButton = document.querySelector('.nav-tab.active');
+    if (initiallyActiveTabButton) {
+        activeTab = initiallyActiveTabButton.dataset.target;
+    } else {
+        // Fallback if no tab is marked active in HTML, default to kds-view
+        activeTab = 'kds-view';
+        document.getElementById('tab-kds')?.classList.add('active');
+        document.getElementById('kds-view')?.classList.add('active-view');
+    }
+    startPollingForActiveTab();
 
-    // --- Lógica de Gerenciamento de Cardápio (placeholder, já que o foco é KDS) ---
+
+    // --- Lógica de Gerenciamento de Cardápio ---
     const menuItemForm = document.getElementById('menu-item-form');
     const menuTableBody = document.getElementById('menu-table-body');
     const noMenuItemsRow = document.getElementById('no-menu-items-row');

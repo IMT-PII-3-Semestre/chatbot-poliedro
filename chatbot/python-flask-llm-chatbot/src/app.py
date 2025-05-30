@@ -7,8 +7,9 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, OperationFailure # Ensure OperationFailure is imported
+from bson.objectid import ObjectId # Import ObjectId
 import datetime
-from datetime import timezone
+import pytz
 from chatbot.handler import ChatbotHandler
 from llm.integration import LLMIntegration
 
@@ -160,6 +161,8 @@ def chat():
     is_direct_confirmation_response = user_input.lower() in ["sim", "não"] and \
                                       last_bot_message_for_confirmation.endswith("Correto?")
 
+    brasilia_tz = pytz.timezone('America/Sao_Paulo') # Define Brasilia timezone
+
     if is_direct_confirmation_response:
         confirmation_intent_result = user_input.lower()
         logging.info(f"Confirmação direta recebida do frontend: '{confirmation_intent_result}'")
@@ -176,7 +179,7 @@ def chat():
                     "items": list(session['cart']),
                     "total": str(total_calculated),
                     "order_details_text": order_details_text,
-                    "timestamp": datetime.datetime.now(timezone.utc),
+                    "timestamp": datetime.datetime.now(brasilia_tz), # Use Brasilia timezone
                     "status": "Pendente"
                 }
                 # final_response_data['final_order'] is assigned final_order_payload.
@@ -234,7 +237,7 @@ def chat():
                         "items": list(session['cart']),
                         "total": str(total_calculated),
                         "order_details_text": order_details_text,
-                        "timestamp": datetime.datetime.now(timezone.utc),
+                        "timestamp": datetime.datetime.now(brasilia_tz), # Use Brasilia timezone
                         "status": "Pendente"
                     }
                     final_response_data['final_order'] = final_order_payload
@@ -337,15 +340,24 @@ def handle_menu():
 # --- API Endpoint: KDS Orders ---
 @app.route('/api/kds/orders', methods=['GET'])
 def api_kds_orders():
-    logging.info(f"/api/kds/orders: Iniciando busca de pedidos. orders_collection is {'None' if orders_collection is None else 'válida'}.")
+    requested_status = request.args.get('status', 'Pendente') # Default to 'Pendente'
+    
+    valid_statuses_for_fetch = ['Pendente', 'Em Preparo', 'Pronto'] # Define quais status podem ser buscados
+    if requested_status not in valid_statuses_for_fetch:
+        logging.warning(f"/api/kds/orders: Status de busca inválido '{requested_status}'.")
+        return jsonify({"error": f"Status de busca inválido. Permitidos: {', '.join(valid_statuses_for_fetch)}"}), 400
+
+    logging.info(f"/api/kds/orders: Iniciando busca de pedidos com status '{requested_status}'. orders_collection is {'None' if orders_collection is None else 'válida'}.")
     if orders_collection is not None:
         try:
-            logging.info("/api/kds/orders: Tentando buscar e ordenar pedidos do MongoDB.")
-            # Busca pedidos com status "Pendente" ou outros status relevantes para o KDS
-            # Ordenados pelo mais antigo primeiro (FIFO para a cozinha)
-            kds_orders_cursor = orders_collection.find({"status": "Pendente"}).sort("timestamp", 1)
+            logging.info(f"/api/kds/orders: Tentando buscar e ordenar pedidos com status '{requested_status}' do MongoDB.")
+            # Busca pedidos com o status solicitado
+            # Ordenados pelo mais antigo primeiro (FIFO para a cozinha) ou mais recente para finalizados
+            sort_order = 1 if requested_status in ['Pendente', 'Em Preparo'] else -1 # Mais recentes primeiro para 'Pronto'
+            
+            kds_orders_cursor = orders_collection.find({"status": requested_status}).sort("timestamp", sort_order)
             kds_orders = list(kds_orders_cursor) # Execute query and convert to list
-            logging.info(f"/api/kds/orders: Encontrados {len(kds_orders)} pedidos pendentes.")
+            logging.info(f"/api/kds/orders: Encontrados {len(kds_orders)} pedidos com status '{requested_status}'.")
             
             processed_orders = []
             for order_data in kds_orders: # Use a new variable to avoid modifying the iterator
@@ -355,7 +367,10 @@ def api_kds_orders():
                 # Format the timestamp for display and ensure the original datetime object is handled
                 timestamp_obj = order_data.get('timestamp')
                 if isinstance(timestamp_obj, datetime.datetime):
-                    order_data['timestamp_iso'] = timestamp_obj.isoformat()
+                    # The timestamp_obj from MongoDB is a naive datetime representing UTC.
+                    # Make it UTC-aware before converting to ISO string so JS parses it correctly as UTC.
+                    aware_utc_timestamp = timestamp_obj.replace(tzinfo=datetime.timezone.utc)
+                    order_data['timestamp_iso'] = aware_utc_timestamp.isoformat()
                 else:
                     # If timestamp is not a datetime object (e.g., already a string or None)
                     # or if it's missing, set timestamp_iso appropriately.
@@ -388,6 +403,59 @@ def api_kds_orders():
         # This case means orders_collection was None when the function was called
         logging.error("/api/kds/orders: orders_collection é None. Coleção de pedidos (MongoDB) não está disponível.")
         return jsonify({"error": "Serviço de banco de dados não disponível (orders_collection is None)."}), 503
+
+# --- API Endpoint: Update KDS Order Status ---
+@app.route('/api/kds/order/<order_id>/status', methods=['PUT'])
+def update_kds_order_status(order_id):
+    logging.info(f"PUT /api/kds/order/{order_id}/status: Iniciando atualização de status.")
+    if orders_collection is None:
+        logging.error(f"PUT /api/kds/order/{order_id}/status: orders_collection é None.")
+        return jsonify({"error": "Serviço de banco de dados não disponível."}), 503
+
+    data = request.get_json()
+    new_status = data.get('status')
+
+    if not new_status:
+        logging.warning(f"PUT /api/kds/order/{order_id}/status: Novo status não fornecido no corpo da requisição.")
+        return jsonify({"error": "Novo status é obrigatório."}), 400
+
+    allowed_statuses = ["Em Preparo", "Pronto", "Cancelado"] # Adicione outros status se necessário
+    if new_status not in allowed_statuses:
+        logging.warning(f"PUT /api/kds/order/{order_id}/status: Status '{new_status}' inválido.")
+        return jsonify({"error": f"Status inválido. Permitidos: {', '.join(allowed_statuses)}"}), 400
+
+    try:
+        obj_id = ObjectId(order_id)
+    except Exception:
+        logging.warning(f"PUT /api/kds/order/{order_id}/status: ID do pedido inválido.")
+        return jsonify({"error": "ID do pedido inválido."}), 400
+
+    try:
+        result = orders_collection.update_one(
+            {"_id": obj_id},
+            {"$set": {"status": new_status, "last_updated": datetime.datetime.now(pytz.timezone('America/Sao_Paulo'))}}
+        )
+
+        if result.matched_count == 0:
+            logging.warning(f"PUT /api/kds/order/{order_id}/status: Pedido não encontrado.")
+            return jsonify({"error": "Pedido não encontrado."}), 404
+        
+        if result.modified_count == 0:
+            # Isso pode acontecer se o status já for o novo_status
+            logging.info(f"PUT /api/kds/order/{order_id}/status: Status do pedido já era '{new_status}'. Nenhuma alteração feita.")
+            return jsonify({"message": f"Status do pedido já era '{new_status}'."}), 200
+
+
+        logging.info(f"PUT /api/kds/order/{order_id}/status: Status do pedido atualizado para '{new_status}'.")
+        return jsonify({"message": "Status do pedido atualizado com sucesso."}), 200
+
+    except OperationFailure as op_e:
+        logging.exception(f"PUT /api/kds/order/{order_id}/status: Erro de operação do MongoDB: {op_e.details}")
+        return jsonify({"error": "Erro de banco de dados ao atualizar status."}), 500
+    except Exception as e:
+        logging.exception(f"PUT /api/kds/order/{order_id}/status: Erro inesperado: {e}")
+        return jsonify({"error": "Erro interno ao atualizar status do pedido."}), 500
+
 
 # --- Execução da Aplicação ---
 if __name__ == '__main__':

@@ -80,47 +80,50 @@ Para complementar, um sistema KDS (Kitchen Display System) foi integrado para qu
 
 3.  **Configure o Backend (Servidor Flask):**
 
-    a.  Navegue até o diretório do backend:
+    Navegue até o diretório do backend:
     
-        ```bash
+       ```bash
         cd chatbot/python-flask-llm-chatbot
-        ```
+       ```
     
-    b.  Crie e ative um ambiente virtual (altamente recomendado):
-        ```bash
+    Crie e ative um ambiente virtual (altamente recomendado):
+       
+       ```bash
         python -m venv .venv
-        ```
-        No Windows:
-        ```bash
+       ```
+       No Windows:
+       ```bash
         .venv\Scripts\activate
-        ```
-        No macOS/Linux:
-        ```bash
+       ```
+       No macOS/Linux:
+       ```bash
         source .venv/bin/activate
-        ```
-    c.  Instale as dependências do backend:
+       ```
+    Instale as dependências do backend:
 
-        ```bash
+       ```bash
         pip install -r requirements.txt
-        ```
+       ```
 
-    d.  **Configure as variáveis de ambiente:**
+4.    **Configure as variáveis de ambiente:**
 
-        Na raiz do diretório `chatbot/python-flask-llm-chatbot`, você encontrará um arquivo chamado `.env`.
-        **Abra este arquivo `.env` e edite-o**, substituindo os valores de placeholder (especialmente para `MONGODB_URI` e `FLASK_SECRET_KEY`) pelos seus dados reais. O arquivo já contém comentários explicando cada variável.
+       Na raiz do diretório `chatbot/python-flask-llm-chatbot`, você encontrará um arquivo chamado `.env`.
 
-        **Importante:** Certifique-se de que o arquivo `.env` com suas credenciais reais **não seja** commitado no repositório se ele for público. O arquivo `.env` no repositório deve servir apenas como um template.
+        Abra este arquivo `.env` e edite-o, substituindo os valores de placeholder (especialmente para `MONGODB_URI` e `FLASK_SECRET_KEY`) pelos seus dados reais. O arquivo já contém comentários explicando cada variável.
 
-    e.  Execute o servidor Flask (ainda dentro de `chatbot/python-flask-llm-chatbot`):
-        ```bash
+       **Importante:** Certifique-se de que o arquivo `.env` com suas credenciais reais **não seja** commitado no repositório se ele for público. O arquivo `.env` no repositório deve servir apenas como um template.
+
+      Execute o servidor Flask (ainda dentro de `chatbot/python-flask-llm-chatbot`):
+       ```bash
         python src/app.py
-        ```
-        O servidor backend estará rodando, por padrão, em `http://127.0.0.1:5000`.
+       ```
+       O servidor backend estará rodando, por padrão, em `http://127.0.0.1:5000`.
 
 4.  **Acesse o Frontend (Chat e KDS):**
-    a.  Para a interface do Chat, abra o arquivo `chatbot/index.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/index.html`) em seu navegador.
+   
+    Para a interface do Chat, abra o arquivo `chatbot/index.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/index.html`) em seu navegador.
 
-    b.  Para o painel KDS/Admin, abra o arquivo `chatbot/kds.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/kds.html`) em seu navegador.
+    Para o painel KDS/Admin, abra o arquivo `chatbot/kds.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/kds.html`) em seu navegador.
 
 ---
 

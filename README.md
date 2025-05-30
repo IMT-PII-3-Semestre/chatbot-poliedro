@@ -117,10 +117,11 @@ Para complementar, um sistema KDS (Kitchen Display System) foi integrado para qu
         ```
         O servidor backend estará rodando, por padrão, em `http://127.0.0.1:5000`.
 
-5.  **Acesse o Frontend (Chat e KDS):**
+4.  **Acesse o Frontend (Chat e KDS):**
     a.  Para a interface do Chat, abra o arquivo `chatbot/index.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/index.html`) em seu navegador.
+
     b.  Para o painel KDS/Admin, abra o arquivo `chatbot/kds.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/kds.html`) em seu navegador.
-    
+
 ---
 
 ## Agradecimentos

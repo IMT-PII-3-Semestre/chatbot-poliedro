@@ -1,4 +1,4 @@
-# </div><p align="center">🤖 Chatbot Poliedro 🤖</p>
+# 🤖 Chatbot Poliedro 🤖
 
 Bem-vindo ao repositório do **Chatbot Poliedro**, um projeto interdisciplinar desenvolvido por alunos do 3º semestre do curso de Ciências da Computação do Instituto Mauá de Tecnologia. Este sistema visa otimizar o atendimento nos restaurantes das escolas Poliedro, reduzindo filas e aprimorando a comunicação entre clientes e cozinha.
 
@@ -45,10 +45,13 @@ Para complementar, um sistema KDS (Kitchen Display System) foi integrado para qu
 -   **Flask-CORS**: Middleware para habilitar requisições Cross-Origin Resource Sharing (CORS).
 -   **Requests**: Biblioteca para realizar chamadas HTTP para a API do LLM ([`chatbot/python-flask-llm-chatbot/src/llm/integration.py`](chatbot/python-flask-llm-chatbot/src/llm/integration.py)).
 -   **Ollama**: Plataforma externa para execução local de Modelos de Linguagem Grandes (LLMs).
+-   **python-dotenv**: Para gerenciamento de variáveis de ambiente.
+-   **pymongo**: Biblioteca Python para interagir com o MongoDB.
+-   **pytz**: Para manipulação de fusos horários.
 
-### Banco de Dados (Planejado)
+### Banco de Dados
 
--   **MongoDB**: Previsto para armazenamento persistente de dados (atualmente não implementado).
+-   **MongoDB**: Utilizado para armazenamento persistente do cardápio (menu) e dos pedidos dos clientes.
 
 ---
 
@@ -57,51 +60,76 @@ Para complementar, um sistema KDS (Kitchen Display System) foi integrado para qu
 ### Pré-requisitos
 
 -   Git ([https://git-scm.com/](https://git-scm.com/))
--   Python 3 ([https://www.python.org/](https://www.python.org/))
+-   Python 3.10 ou superior ([https://www.python.org/](https://www.python.org/))
 -   Ollama ([https://ollama.com/](https://ollama.com/))
+-   MongoDB (Instância local ou um serviço na nuvem como MongoDB Atlas - [https://www.mongodb.com/](https://www.mongodb.com/))
 
 ### Passos
 
-1.  **Clone o repositório:**
+1.  **Prepare o Ollama:**
+    Certifique-se de que o Ollama está instalado e em execução em sua máquina. Baixe o modelo LLM que será utilizado (o padrão configurado no projeto é `mistral`, mas você pode alterá-lo no arquivo `.env`):
+    ```bash
+    ollama pull mistral
+    ```
+
+2.  **Clone o repositório:**
     ```bash
     git clone <https://github.com/IMT-PII-3-Semestre/chatbot-poliedro>
     cd chatbot-poliedro
     ```
 
-2.  **Configure o Backend:**
-    *   Navegue até o diretório do backend:
+3.  **Configure o Backend (Servidor Flask):**
+    a.  Navegue até o diretório do backend:
         ```bash
         cd chatbot/python-flask-llm-chatbot
         ```
-    *   Crie e ative um ambiente virtual:
+    b.  Crie e ative um ambiente virtual (altamente recomendado):
         ```bash
-        # Criar (apenas uma vez)
-        python -m venv venv
-        # Ativar (Windows)
-        venv\Scripts\activate
-        # Ativar (macOS/Linux)
-        source venv/bin/activate
+        python -m venv .venv
         ```
-    *   Instale as dependências Python:
+        No Windows:
+        ```bash
+        .venv\Scripts\activate
+        ```
+        No macOS/Linux:
+        ```bash
+        source .venv/bin/activate
+        ```
+    c.  Instale as dependências do backend:
         ```bash
         pip install -r requirements.txt
         ```
-    *   Baixe o modelo LLM via Ollama:
-        ```bash
-        ollama pull mistral
+    d.  **Configure as variáveis de ambiente:**
+        Na raiz do diretório `chatbot/python-flask-llm-chatbot` (onde o `requirements.txt` está localizado), crie um arquivo chamado `.env`. Copie o conteúdo abaixo para este arquivo e substitua os valores de placeholder pelos seus dados reais:
+        ```env
+        # Conteúdo para .env
+        MONGODB_URI="mongodb+srv://<username>:<password>@<cluster-url>/<database-name>?retryWrites=true&w=majority"
+        FLASK_SECRET_KEY="uma_string_aleatoria_e_longa_para_seguranca_da_sessao_flask"
+        FLASK_DEBUG=True
+        OLLAMA_URL="http://localhost:11434/api/generate"
+        OLLAMA_MODEL="mistral" 
+        OLLAMA_TIMEOUT=60
+        OLLAMA_TEMPERATURE=0.5
         ```
-        *(O modelo padrão é `mistral`, configurado em `src/app.py`. O backend espera que o Ollama esteja acessível em `http://localhost:11434`)*
+        -   **`MONGODB_URI`**: Sua string de conexão completa para o banco de dados MongoDB.
+        -   **`FLASK_SECRET_KEY`**: Uma chave secreta forte e única para proteger as sessões do Flask.
+        -   **`FLASK_DEBUG`**: Defina como `True` para habilitar o modo de depuração do Flask durante o desenvolvimento. Mude para `False` em um ambiente de produção.
+        -   **`OLLAMA_URL`**: A URL base da sua API Ollama.
+        -   **`OLLAMA_MODEL`**: O nome do modelo LLM que o Ollama deve usar (deve estar previamente baixado no Ollama).
+        -   **`OLLAMA_TIMEOUT`**: Tempo máximo de espera (em segundos) para respostas da API Ollama.
+        -   **`OLLAMA_TEMPERATURE`**: Controla a criatividade/aleatoriedade da resposta do LLM (valores típicos entre 0.2 e 0.8).
 
-3.  **Execute o Backend:**
-    *   Ainda no diretório `chatbot/python-flask-llm-chatbot` e com o ambiente virtual ativado:
+    e.  Execute o servidor Flask (ainda dentro de `chatbot/python-flask-llm-chatbot`):
         ```bash
         python src/app.py
         ```
-    *   O servidor Flask iniciará (geralmente em `http://localhost:5000`).
+        O servidor backend estará rodando, por padrão, em `http://127.0.0.1:5000`.
 
-4.  **Acesse o Frontend:**
-    *   Abra o arquivo [`chatbot/index.html`](chatbot/index.html) diretamente no seu navegador. Ele se conectará automaticamente ao backend em execução.
-    *   O painel KDS(Kitchen Display System) pode ser acessado abrindo [`chatbot/kds.html`](chatbot/kds.html).
+4.  **Acesse o Frontend (Chat e KDS):**
+    a.  Para a interface do Chat, abra o arquivo `chatbot/index.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/index.html`) em seu navegador.
+    b.  Para o painel KDS/Admin, abra o arquivo `chatbot/kds.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/kds.html`) em seu navegador.
+    
+    *Nota Importante sobre o Frontend:* Para uma melhor experiência e para evitar possíveis problemas de CORS (Cross-Origin Resource Sharing) ao fazer requisições do frontend (arquivos HTML/JavaScript) para o backend Flask, é recomendado servir os arquivos HTML usando um servidor web local. Uma opção popular para desenvolvimento é a extensão "Live Server" no Visual Studio Code. Alternativamente, o Flask pode ser configurado para servir arquivos estáticos se o frontend e o backend estiverem na mesma origem em um ambiente de produção.
 
 ---
 

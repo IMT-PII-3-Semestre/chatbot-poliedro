@@ -62,9 +62,7 @@ class LLMIntegration:
             return "Desculpe, ocorreu um erro ao tentar carregar o cardápio."
 
     def _is_menu_unavailable(self, menu_string):
-        """Verifica se a string do menu indica que ele não está disponível ou houve erro."""
-        if menu_string is None: # Não deve acontecer com a lógica atual de _get_menu_string_from_db, mas é uma verificação de segurança.
-            return True
+        """Verifica se a string do menu indica que ele não está disponível."""
         return any(menu_string.startswith(prefix) for prefix in self.known_menu_error_prefixes)
 
     def _build_base_context(self):

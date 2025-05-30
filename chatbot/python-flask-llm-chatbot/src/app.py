@@ -60,8 +60,6 @@ if MONGODB_URI:
         mongo_client = None
 else:
     logging.warning("MONGODB_URI não configurada. A integração com MongoDB está desabilitada.")
-    menu_items_collection = None # Define explicitamente como None
-    orders_collection = None
 
 # --- Inicialização dos Componentes ---
 llm_integration = None
@@ -152,8 +150,6 @@ def chat():
     if chatbot_handler is None:
         logging.error("/chat: ChatbotHandler não inicializado.")
         return jsonify({"error": "Serviço de chatbot indisponível."}), 503
-
-    session_id = data.get('session_id') # session_id não está sendo usado atualmente
 
     if not user_input:
         return jsonify({"response": "Por favor, digite uma mensagem.", "cart": session.get('cart', [])}), 400

@@ -121,8 +121,6 @@ Para complementar, um sistema KDS (Kitchen Display System) foi integrado para qu
     a.  Para a interface do Chat, abra o arquivo `chatbot/index.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/index.html`) em seu navegador.
     b.  Para o painel KDS/Admin, abra o arquivo `chatbot/kds.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/kds.html`) em seu navegador.
     
-    *Nota Importante sobre o Frontend:* Para uma melhor experiência e para evitar possíveis problemas de CORS (Cross-Origin Resource Sharing) ao fazer requisições do frontend (arquivos HTML/JavaScript) para o backend Flask, é recomendado servir os arquivos HTML usando um servidor web local. Uma opção popular para desenvolvimento é a extensão "Live Server" no Visual Studio Code. Alternativamente, o Flask pode ser configurado para servir arquivos estáticos se o frontend e o backend estiverem na mesma origem em um ambiente de produção.
-
 ---
 
 ## Agradecimentos

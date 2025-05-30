@@ -22,8 +22,8 @@ class LLMIntegration:
         Returns:
             str: String formatada do cardápio ou mensagem de erro/indisponibilidade.
         """
-        if not self.menu_collection: # Use the stored collection
-            logging.error("LLMIntegration: menu_collection não está disponível (não foi injetada).")
+        if self.menu_collection is None: # MODIFIED HERE
+            logging.error("LLMIntegration: self.menu_collection não está disponível.")
             return "Desculpe, o cardápio está temporariamente indisponível."
         
         try:
@@ -35,16 +35,18 @@ class LLMIntegration:
             for item in menu_list_from_db:
                 try:
                     name = item.get("name", "Item sem nome")
-                    price = Decimal(str(item.get("price", 0))) # Preço como Decimal
+                    # Ensure price is treated as a string before Decimal conversion if it's float from DB
+                    price_str = str(item.get("price", "0"))
+                    price = Decimal(price_str) 
                     menu_items_formatted.append(f"- {name} (R$ {price:.2f})")
-                except (InvalidOperation, ValueError, TypeError):
-                    logging.warning(f"LLMIntegration: Ignorando item com preço inválido do DB: {item}")
+                except (InvalidOperation, ValueError, TypeError) as e:
+                    logging.warning(f"LLMIntegration: Ignorando item com preço inválido do DB: {item}. Erro: {e}")
             
             if not menu_items_formatted:
                  return "No momento não temos itens válidos cadastrados no cardápio."
             return "\n".join(menu_items_formatted)
-        except Exception as e:
-            logging.exception(f"LLMIntegration: Erro ao carregar cardápio do MongoDB: {e}")
+        except Exception as e: # Catch generic pymongo errors if any other than OperationFailure
+            logging.exception(f"LLMIntegration: Erro ao carregar cardápio do MongoDB via self.menu_collection: {e}")
             return "Desculpe, ocorreu um erro ao tentar carregar o cardápio."
 
     def _build_base_context(self):

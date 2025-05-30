@@ -14,18 +14,20 @@ body {
 }
 
 .kds-header {
-    background-color: #ffffff;
+    /* background-color: #ffffff; */ /* Removed to blend with kds-main background */
     color: #343a40;
-    padding: 15px 25px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    border-bottom: 1px solid #e9ecef;
+    /* padding: 15px 25px; */ /* Original padding, now relying on kds-main padding for horizontal/top */
+    padding-bottom: 15px; /* Space above the bottom border */
+    margin-bottom: 25px; /* Increased space below the header before orders */
+    /* border-radius: 8px; */ /* Removed */
+    /* box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); */ /* Removed */
+    border-bottom: 1px solid #dee2e6; /* Subtle border for separation */
 }
 
 .kds-header h1 {
-    font-size: 1.6em;
+    font-size: 1.7em; /* Slightly increased for prominence */
     font-weight: 600;
+    margin: 0; /* Remove default h1 margins */
 }
 
 /* --- Estilização da Navegação por Abas --- */
@@ -191,21 +193,24 @@ body {
 .kds-order-item .order-actions {
     display: flex;
     gap: 8px; /* Espaço entre os botões */
+    flex-grow: 1; /* Permite que este container cresça para preencher o espaço */
+    justify-content: flex-end; /* Alinha os botões à direita dentro deste container */
 }
 
 .btn-kds-action {
-    padding: 8px 12px; /* Aumenta o padding para melhor toque/clique */
-    font-size: 0.9em;  /* Tamanho de fonte consistente */
-    border-radius: 5px; /* Bordas levemente arredondadas */
+    padding: 8px 12px;
+    font-size: 0.9em;
+    border-radius: 5px;
     cursor: pointer;
     border: 1px solid transparent;
     transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
     font-weight: 500;
-    display: inline-flex; /* Para alinhar ícone e texto se houver */
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-width: 110px; /* Largura mínima para consistência */
+    min-width: 90px; /* Reduzido para um pouco mais de flexibilidade */
+    /* flex-shrink: 0; */ /* Removido para permitir que os botões encolham se necessário */
 }
 .btn-kds-action i { /* Se você adicionar ícones aos botões */
     margin-right: 5px;

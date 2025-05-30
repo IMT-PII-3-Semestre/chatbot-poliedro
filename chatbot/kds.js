@@ -88,9 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="order-footer">
                     <span class="order-status status-${order.status.toLowerCase().replace(/\s+/g, '-')}">${order.status}</span>
-                    <div class="order-actions"> {/* Wrapper adicionado */}
-                        <button class="btn-kds-action btn-mark-preparando" data-id="${order._id}">Preparando</button> {/* Texto do botão alterado */}
-                        <button class="btn-kds-action btn-mark-pronto" data-id="${order._id}">Pronto</button> {/* Texto do botão alterado */}
+                    <div class="order-actions"> 
+                        <button class="btn-kds-action btn-mark-preparando" data-id="${order._id}">Preparando</button>
+                        <button class="btn-kds-action btn-mark-pronto" data-id="${order._id}">Pronto</button>
                     </div>
                 </div>
             `;

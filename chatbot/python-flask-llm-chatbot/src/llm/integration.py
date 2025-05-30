@@ -3,70 +3,53 @@ import json
 import logging
 import os
 from decimal import Decimal, InvalidOperation
+# No longer need to import app or main_app here
 
 logging.basicConfig(level=logging.INFO)
 
 class LLMIntegration:
-    def __init__(self, ollama_url, model_name, timeout=60, temperature=0.5):
+    def __init__(self, ollama_url, model_name, menu_collection, timeout=60, temperature=0.5): # Added menu_collection
         self.ollama_url = ollama_url
         self.model_name = model_name
+        self.menu_collection = menu_collection # Store it
         self.timeout = timeout
         self.temperature = temperature
         logging.info(f"LLMIntegration inicializado para o modelo '{self.model_name}' em {self.ollama_url} com timeout={self.timeout}, temp={self.temperature}")
 
-    def _load_menu_from_json(self):
-        """Carrega o cardápio do arquivo menu.json.
-
-        Returns:
-            str: String formatada do cardápio em caso de sucesso.
-            None: Em caso de erro ao carregar ou parsear o arquivo, ou se o menu estiver vazio/inválido.
+    def _get_menu_string_from_db(self):
         """
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        menu_path = os.path.join(current_dir, '..', 'menu.json')
-
-        if not os.path.exists(menu_path):
-            logging.error(f"Arquivo menu.json não encontrado em {menu_path}")
-            return None
-
+        Carrega o cardápio da coleção MongoDB e formata como string.
+        Returns:
+            str: String formatada do cardápio ou mensagem de erro/indisponibilidade.
+        """
+        if not self.menu_collection: # Use the stored collection
+            logging.error("LLMIntegration: menu_collection não está disponível (não foi injetada).")
+            return "Desculpe, o cardápio está temporariamente indisponível."
+        
         try:
-            with open(menu_path, 'r', encoding='utf-8') as f:
-                menu_data = json.load(f)
-
-            if not isinstance(menu_data, list):
-                logging.error(f"Formato inválido no menu.json: esperado uma lista, encontrado {type(menu_data)}.")
-                return None
+            menu_list_from_db = list(self.menu_collection.find({})) # Use self.menu_collection
+            if not menu_list_from_db:
+                return "No momento não temos itens cadastrados no cardápio."
 
             menu_items_formatted = []
-            for item in menu_data:
-                if isinstance(item, dict) and 'name' in item and 'price' in item:
-                    try:
-                        price = Decimal(str(item['price']))
-                        if price >= 0:
-                            menu_items_formatted.append(f"- {item['name']} (R$ {price:.2f})")
-                        else:
-                            logging.warning(f"Ignorando item com preço negativo no menu: {item}")
-                    except (InvalidOperation, ValueError, TypeError):
-                        logging.warning(f"Ignorando item com preço inválido no menu: {item}")
-                else:
-                    logging.warning(f"Ignorando item mal formatado no menu: {item}")
-
+            for item in menu_list_from_db:
+                try:
+                    name = item.get("name", "Item sem nome")
+                    price = Decimal(str(item.get("price", 0))) # Preço como Decimal
+                    menu_items_formatted.append(f"- {name} (R$ {price:.2f})")
+                except (InvalidOperation, ValueError, TypeError):
+                    logging.warning(f"LLMIntegration: Ignorando item com preço inválido do DB: {item}")
+            
             if not menu_items_formatted:
-                logging.warning("Nenhum item válido encontrado no cardápio após o parse.")
-                return None
-
+                 return "No momento não temos itens válidos cadastrados no cardápio."
             return "\n".join(menu_items_formatted)
-
-        except json.JSONDecodeError:
-            logging.exception(f"Erro ao decodificar o arquivo menu.json em {menu_path}")
-            return None
         except Exception as e:
-            logging.exception(f"Erro inesperado ao carregar menu.json: {e}")
-            return None
+            logging.exception(f"LLMIntegration: Erro ao carregar cardápio do MongoDB: {e}")
+            return "Desculpe, ocorreu um erro ao tentar carregar o cardápio."
 
     def _build_base_context(self):
-        """Constrói o prompt base com instruções, menu atualizado e exemplos,
-           ou um prompt de erro se o menu não puder ser carregado."""
-        menu_string = self._load_menu_from_json()
+        """Constrói o prompt base com instruções e o menu atualizado do DB."""
+        menu_string = self._get_menu_string_from_db()
 
         if menu_string is None:
             logging.error("Falha ao carregar o menu. Construindo prompt de erro para o LLM.")

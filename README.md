@@ -113,13 +113,30 @@ Para complementar, um sistema KDS (Kitchen Display System) foi integrado para qu
 
        **Importante:** Certifique-se de que o arquivo `.env` com suas credenciais reais **não seja** commitado no repositório se ele for público. O arquivo `.env` no repositório deve servir apenas como um template.
 
-      Execute o servidor Flask (ainda dentro de `chatbot/python-flask-llm-chatbot`):
+    ### Considerações de Segurança
+
+    #### `FLASK_SECRET_KEY`
+    A variável de ambiente `FLASK_SECRET_KEY` é crucial para a segurança da aplicação Flask, especialmente para proteger as sessões dos usuários contra adulteração.
+
+    *   **Em Ambiente de Produção:** É **obrigatório** que você defina `FLASK_SECRET_KEY` como uma string única, longa, forte e aleatória. Não utilize a chave padrão ou chaves fracas.
+    *   **Geração de Chave Segura:** Você pode gerar uma chave secreta forte usando Python:
+        ```bash
+        python -c 'import secrets; print(secrets.token_hex(32))'
+        ```
+        Copie o valor gerado e cole-o no seu arquivo `.env` para a variável `FLASK_SECRET_KEY`.
+    *   **Proteção do Arquivo `.env`:** O arquivo `.env` (ou qualquer arquivo que contenha sua `FLASK_SECRET_KEY` real) **nunca deve ser commitado** em um repositório Git público ou compartilhado de forma insegura. Adicione `.env` ao seu arquivo `.gitignore` para evitar commits acidentais. A aplicação agora irá falhar ao iniciar se `FLASK_SECRET_KEY` não estiver definida, como uma medida de segurança.
+
+    #### Outras Variáveis Sensíveis
+    Da mesma forma, outras variáveis no arquivo `.env` como `MONGODB_URI` contêm informações sensíveis. Mantenha seu arquivo `.env` local e seguro.
+
+5.  **Execute o servidor Flask:**
+    Ainda dentro de `chatbot/python-flask-llm-chatbot`, após configurar seu `.env`:
        ```bash
         python src/app.py
        ```
        O servidor backend estará rodando, por padrão, em `http://127.0.0.1:5000`.
 
-4.  **Acesse o Frontend (Chat e KDS):**
+6.  **Acesse o Frontend (Chat e KDS):**
    
     Para a interface do Chat, abra o arquivo `chatbot/index.html` (localizado em `caminho/para/chatbot-poliedro/chatbot/index.html`) em seu navegador.
 

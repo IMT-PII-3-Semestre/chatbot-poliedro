@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById('send-button');
     const newChatButton = document.getElementById('new-chat-button');
 
+    // Define a URL base da API para o chat
+    const API_BASE_URL = 'http://127.0.0.1:5000';
+
     // Chave para armazenar pedidos pendentes no KDS
     const KDS_STORAGE_KEY = 'pedidosCozinhaPendentes';
 
@@ -176,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Função Principal: Chamar API do Backend ---
     async function callChatAPI(userMessage) {
-        const apiUrl = 'http://127.0.0.1:5000/chat'; // URL absoluta para o backend Flask
+        const apiUrl = `${API_BASE_URL}/chat`; // URL absoluta para o backend Flask
 
         // MOSTRA o indicador ANTES de chamar a API
         showLoadingIndicator();
@@ -193,23 +196,45 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // ESCONDE o indicador ANTES de processar a resposta (ok ou erro)
-            hideLoadingIndicator();
-            hideTypingIndicator();
+            // ESCONDE o indicador ANTES de processar a resposta (ok ou erro)
+            // hideLoadingIndicator(); // Already called before this block if fetch succeeded
+            // hideTypingIndicator(); // Already called before this block if fetch succeeded
 
             if (!response.ok) {
-                let errorMsg = `Erro HTTP ${response.status} ${response.statusText}`;
+                // Indicators are already hidden by this point by the calls made after fetch() completes (successfully or not)
+                // and before this !response.ok check.
+
+                let userFriendlyMessage = "";
                 try {
                     const errorData = await response.json();
                     if (errorData && errorData.error) {
-                        errorMsg += `: ${errorData.error}`;
-                    } else if (errorData && errorData.response) { // Captura erro vindo do "response"
-                        errorMsg += `: ${errorData.response}`;
+                        userFriendlyMessage = `😕 Oops! Algo deu errado no servidor: ${errorData.error}`;
+                    } else if (errorData && errorData.response) {
+                        userFriendlyMessage = `😕 Oops! Algo deu errado no servidor: ${errorData.response}`;
+                    } else {
+                        // Se não houver errorData.error ou errorData.response, montar uma mensagem baseada no status
+                        throw new Error("No specific error message in JSON body");
                     }
-                } catch (e) { /* Ignora erro ao parsear JSON de erro */ }
-                console.error('Erro na API:', errorMsg);
-                addMessage(`😕 Oops! Algo deu errado no servidor. ${errorMsg}`, 'bot');
+                } catch (e) { // Falha ao parsear JSON ou campos esperados não encontrados
+                    console.warn('Não foi possível parsear JSON da resposta de erro ou campos esperados ausentes:', e);
+                    if (response.status === 500) {
+                        userFriendlyMessage = "Ocorreu um erro interno no servidor. Por favor, tente novamente mais tarde.";
+                    } else if (response.status === 400) {
+                        userFriendlyMessage = `Requisição inválida (HTTP ${response.status}): ${response.statusText}. Verifique os dados enviados.`;
+                    } else if (response.status === 404) {
+                        userFriendlyMessage = `Recurso não encontrado (HTTP ${response.status}): ${response.statusText}.`;
+                    } else {
+                        userFriendlyMessage = `😕 Oops! Algo deu errado (HTTP ${response.status} ${response.statusText}). Por favor, tente novamente.`;
+                    }
+                }
+                console.error('Erro na API:', response.status, response.statusText);
+                addMessage(userFriendlyMessage, 'bot');
                 return;
             }
+
+            // Indicators should have been hidden before this point if response was .ok
+            // hideLoadingIndicator(); // Already called
+            // hideTypingIndicator(); // Already called
 
             const data = await response.json();
 
@@ -266,7 +291,12 @@ document.addEventListener('DOMContentLoaded', () => {
             hideLoadingIndicator();
             hideTypingIndicator();
             console.error('Erro geral ao chamar a API:', error);
-            addMessage("Desculpe, ocorreu um erro ao conectar com o servidor. Verifique sua conexão ou tente mais tarde.", 'bot');
+
+            if (error instanceof TypeError) { // Network error, server down, CORS etc.
+                addMessage("Não foi possível conectar ao servidor. Verifique sua conexão ou tente mais tarde.", 'bot');
+            } else { // Other unexpected errors
+                addMessage("Ocorreu um erro inesperado ao processar sua solicitação. Por favor, tente novamente.", 'bot');
+            }
         }
     }
 
@@ -282,13 +312,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /** Inicia uma nova conversa, limpando o histórico e reiniciando a sessão */
-    function startNewChat() {
-        chatMessages.innerHTML = ''; // Limpa mensagens da tela
-        currentCart = []; // Limpa o carrinho local
-        updateCartDisplay(); // Atualiza a exibição do carrinho (para esvaziar)
-        appendMessage('bot', 'Olá! Sou o assistente virtual do Restaurante Poliedro. 👋<br>Como posso ajudar você hoje?');
-        chatInput.focus();
-        logging.info("Nova sessão de chat iniciada.");
+    async function startNewChat() {
+        chatBox.innerHTML = ''; // Clear current messages
+        addMessage("Iniciando uma nova conversa...", "bot"); // Show feedback
+
+        // Attempt to notify the backend to reset the session (if such an endpoint exists or is added)
+        // For now, we'll assume no specific backend endpoint and just clear client-side state
+        // and restart the conversation flow.
+        // A more robust solution would involve a backend call to session.clear() or similar.
+
+        // Simulate backend session reset by sending a generic greeting that should restart the conversation.
+        // This relies on the backend treating "oi" or a similar generic greeting as the start of a new interaction
+        // and clearing/resetting any previous state like conversation_history or cart in the session.
+        // The current backend's /chat endpoint re-initializes session['cart'] etc. if not present,
+        // but doesn't explicitly clear them on a "new chat" command.
+        // The most effective way to truly start fresh with the current backend is to make it forget the old session.
+        // This often means clearing cookies or the backend session store, which is hard from client JS alone without a dedicated endpoint.
+
+        // For now, we will send a message that *should* be interpreted as a new start by the LLM.
+        // And rely on the user potentially having to say "cancelar pedido" if an old one was in progress.
+        userInput.value = ''; // Clear input field
+        // Consider if startChat() should be called before or after, or integrated.
+        // For now, callChatAPI will trigger bot's response which might include welcome if history is cleared by backend.
+        await callChatAPI('Olá, gostaria de começar uma nova conversa.'); // Send a clear intent to start over.
+        userInput.focus();
+        console.log("Solicitação de nova conversa enviada.");
+        // If startChat() is called here, it might add duplicate welcome messages if callChatAPI also triggers them.
+        // Let's rely on callChatAPI to refresh the conversation.
+        // If the LLM doesn't provide a greeting, then startChat() might be needed after clearing chatBox.
+        // The original startChat() also adds messages directly.
+        // Let's refine: clear, add placeholder, then let callChatAPI handle the new flow.
+        // If the backend doesn't reset well, then we might need to call startChat() to paint default welcome.
     }
 
     // --- Event Listeners ---

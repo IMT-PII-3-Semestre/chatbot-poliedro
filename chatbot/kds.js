@@ -213,6 +213,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Função para atualizar o status de um pedido via API
     async function handleOrderStatusUpdate(orderId, newStatus) {
+        const allowedStatuses = ['Em Preparo', 'Pronto', 'Cancelado'];
+        if (!allowedStatuses.includes(newStatus)) {
+            console.warn(`Tentativa de atualizar para status inválido: ${newStatus} para o pedido ${orderId}. Ação bloqueada.`);
+            // Opcionalmente, exibir um alerta para o usuário, mas console.warn é menos intrusivo para o KDS.
+            // alert(`Status inválido fornecido: ${newStatus}`);
+            return; // Impede a chamada da API
+        }
+
         console.log(`Tentando atualizar pedido ${orderId} para status ${newStatus}`);
         const apiUrl = `${FLASK_API_BASE_URL}/api/kds/order/${orderId}/status`;
 
@@ -226,7 +234,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const responseData = await response.json();
 
             if (response.ok) {
-                console.log(`Status do pedido ${orderId} atualizado para ${newStatus} com sucesso:`, responseData.message);
+                const successMessage = responseData.message || `Status do pedido #${orderId.slice(-6)} atualizado para "${newStatus}" com sucesso!`;
+                console.log(successMessage);
+                alert(successMessage); // Feedback para o usuário
                 
                 // Atualiza a visualização KDS (Pendente & Em Preparo)
                 fetchAndDisplayKdsViewOrders();
@@ -237,12 +247,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
             } else {
-                console.error(`Erro ao atualizar status do pedido ${orderId}: ${response.status} ${response.statusText}`, responseData);
-                alert(`Erro ao atualizar status do pedido: ${responseData.error || response.statusText}`);
+                const errorMessage = `Erro ao atualizar status do pedido #${orderId.slice(-6)}: ${responseData.error || response.statusText || 'Erro desconhecido.'}`;
+                console.error(errorMessage, responseData);
+                alert(errorMessage);
             }
         } catch (error) {
             console.error(`Erro de rede ou outro erro ao atualizar status do pedido ${orderId}:`, error);
-            alert('Erro de rede ao tentar atualizar o status do pedido. Verifique a conexão com o servidor.');
+            alert(`Erro de rede ou outro problema ao tentar atualizar o status do pedido #${orderId.slice(-6)}. Verifique sua conexão e tente novamente. Detalhes: ${error.message}`);
         }
     }
 
@@ -335,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Erro ao buscar cardápio:", error);
             renderMenu([]); // Renderiza um menu vazio em caso de erro
-            formMessage.textContent = 'Erro ao carregar o cardápio.';
+            formMessage.textContent = `Falha ao carregar o cardápio. Verifique a conexão ou tente mais tarde. Detalhes: ${error.message}`;
             formMessage.className = 'admin-form-message error'; // Classe para erro
         }
     }
@@ -423,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error("Erro ao excluir item:", error);
-            formMessage.textContent = 'Erro de conexão ao excluir o item.';
+            formMessage.textContent = `Erro de conexão ao excluir o item. Verifique sua rede. Detalhes: ${error.message}`;
             formMessage.className = 'admin-form-message error';
         }
     }
@@ -457,7 +468,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 1. Busca o cardápio atual para modificá-lo
                 const currentMenuResponse = await fetch(`${FLASK_API_BASE_URL}/menu`);
-                if (!currentMenuResponse.ok) throw new Error('Falha ao buscar cardápio atual para salvar.');
+                if (!currentMenuResponse.ok) {
+                    // Tenta parsear o erro do fetch do cardápio, se houver
+                    let errorDetail = `Erro HTTP: ${currentMenuResponse.status} ${currentMenuResponse.statusText}`;
+                    try {
+                        const errorData = await currentMenuResponse.json();
+                        errorDetail = errorData.error || errorDetail;
+                    } catch (parseError) { /* ignora */ }
+                    throw new Error(`Falha ao buscar cardápio atual antes de salvar. Detalhes: ${errorDetail}`);
+                }
                 const currentMenuData = await currentMenuResponse.json();
                 let menuToSave = currentMenuData.menu || []; // Array de itens do cardápio
 

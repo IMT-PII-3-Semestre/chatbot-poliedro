@@ -29,10 +29,34 @@ body {
     overflow: hidden;
 }
 
+/* Styling for the New Chat Button */
+#new-chat-button {
+    background: none;
+    border: none;
+    color: white; /* Cor do ícone */
+    font-size: 1.2em; /* Tamanho do ícone, ajuste conforme necessário */
+    cursor: pointer;
+    padding: 5px 10px; /* Espaçamento interno, ajuste conforme necessário */
+    position: absolute; /* Posicionamento dentro do cabeçalho */
+    right: 20px; /* Distância da direita, ajuste conforme necessário */
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+#new-chat-button:hover {
+    opacity: 1;
+}
+
+#new-chat-button i {
+    display: block; /* Ajuda no posicionamento do ícone se necessário */
+}
+
 .chat-header {
     background: linear-gradient(135deg, #6572e6 0%, #5c67e0 100%);
     color: #ffffff;
-    padding: 15px 25px;
+    padding: 15px 60px 15px 25px; /* Aumentado padding à direita para o botão */
     border-radius: 20px 20px 0 0;
     flex-shrink: 0;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);

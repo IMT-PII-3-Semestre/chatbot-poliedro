@@ -22,7 +22,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # --- Configuração da Aplicação Flask ---
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "chave-secreta-padrao-desenvolvimento")
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
+if not app.secret_key:
+    logging.critical("CRITICAL: FLASK_SECRET_KEY não está configurada. A aplicação não pode iniciar de forma segura.")
+    raise RuntimeError("FLASK_SECRET_KEY must be set in environment variables for the application to run securely.")
 app.debug = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
 CORS(app, supports_credentials=True)
 
@@ -141,6 +144,31 @@ def log_request_info(response):
     )
     return response
 
+# --- Função Auxiliar para Salvar Pedido ---
+def _save_order_to_db(order_payload, orders_collection_obj):
+    """
+    Salva um pedido no MongoDB e lida com logging.
+    Retorna o ID do pedido inserido como string, ou None em caso de falha.
+    """
+    if orders_collection_obj is None:
+        logging.warning("MongoDB (orders_collection_obj) não configurado. Pedido não foi salvo.")
+        return None
+    try:
+        # O método insert_one do PyMongo altera order_payload adicionando _id.
+        insert_result = orders_collection_obj.insert_one(order_payload)
+        inserted_id = insert_result.inserted_id
+        logging.info(f"Pedido salvo no MongoDB com ID: {inserted_id}")
+        # Converte ObjectId para string para serialização JSON e uso externo.
+        if '_id' in order_payload:
+            order_payload['_id'] = str(inserted_id)
+        return str(inserted_id)
+    except OperationFailure as e:
+        logging.error(f"Falha ao salvar pedido no MongoDB: {e.details}")
+        return None
+    except Exception as e:
+        logging.exception("Erro inesperado ao salvar pedido no MongoDB.")
+        return None
+
 # --- Endpoint Principal: Chat ---
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -191,23 +219,19 @@ def chat():
                     "status": "Pendente"
                 }
                 # final_response_data['final_order'] recebe final_order_payload.
-                # Se final_order_payload for alterado por insert_one, final_response_data['final_order'] refletirá isso.
+                # Se final_order_payload for alterado por _save_order_to_db,
+                # final_response_data['final_order'] refletirá isso.
                 final_response_data['final_order'] = final_order_payload
-    
-                if orders_collection is not None:
-                    try:
-                        # O método insert_one do PyMongo altera final_order_payload adicionando _id.
-                        insert_result = orders_collection.insert_one(final_order_payload)
-                        logging.info(f"Pedido finalizado e salvo no MongoDB com ID: {insert_result.inserted_id}")
-                        # Converte ObjectId para string para serialização JSON.
-                        if '_id' in final_order_payload:
-                            final_order_payload['_id'] = str(final_order_payload['_id'])
-                    except OperationFailure as e:
-                        logging.error(f"Falha ao salvar pedido no MongoDB: {e.details}")
-                    except Exception as e:
-                        logging.exception("Erro inesperado ao salvar pedido no MongoDB.")
+
+                # Chama a função auxiliar para salvar o pedido
+                inserted_id = _save_order_to_db(final_order_payload, orders_collection)
+                if inserted_id:
+                    logging.info(f"Pedido finalizado (via 'Sim') e salvo com ID: {inserted_id}")
+                    # _save_order_to_db já atualiza final_order_payload['_id']
                 else:
-                    logging.warning("MongoDB não configurado. Pedido não foi salvo no banco de dados.")
+                    logging.error("Falha ao salvar o pedido (via 'Sim') no banco de dados.")
+                    # Opcional: Adicionar uma mensagem de erro para o usuário se o salvamento falhar
+                    # final_response_data["response"] = "Houve um problema ao salvar seu pedido. Tente novamente."
     
                 logging.info(f"Pedido finalizado via botão 'Sim': {session['cart']}")
                 session['cart'] = []
@@ -249,20 +273,17 @@ def chat():
                         "status": "Pendente"
                     }
                     final_response_data['final_order'] = final_order_payload
-    
-                    if orders_collection is not None:
-                        try:
-                            insert_result = orders_collection.insert_one(final_order_payload)
-                            logging.info(f"Pedido (confirmado pelo LLM) salvo no MongoDB com ID: {insert_result.inserted_id}")
-                            if '_id' in final_order_payload:
-                                final_order_payload['_id'] = str(final_order_payload['_id'])
-                        except OperationFailure as e:
-                            logging.error(f"Falha ao salvar pedido (confirmado pelo LLM) no MongoDB: {e.details}")
-                        except Exception as e:
-                            logging.exception("Erro inesperado ao salvar pedido (confirmado pelo LLM) no MongoDB.")
+
+                    # Chama a função auxiliar para salvar o pedido
+                    inserted_id_llm = _save_order_to_db(final_order_payload, orders_collection)
+                    if inserted_id_llm:
+                        logging.info(f"Pedido (confirmado pelo LLM) salvo com ID: {inserted_id_llm}")
+                        # _save_order_to_db já atualiza final_order_payload['_id']
                     else:
-                        logging.warning("MongoDB não configurado. Pedido (confirmado pelo LLM) não foi salvo no banco de dados.")
-    
+                        logging.error("Falha ao salvar o pedido (confirmado pelo LLM) no banco de dados.")
+                        # Opcional: Adicionar uma mensagem de erro para o usuário
+                        # final_response_data["response"] = "Houve um problema ao salvar seu pedido (LLM). Tente novamente."
+
                     logging.info(f"Pedido finalizado (confirmado pelo LLM via handler): {session['cart']}")
                     session['cart'] = []
                     session['conversation_history'] = []

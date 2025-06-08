@@ -12,7 +12,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-        background: linear-gradient(135deg, #ece9e6 0%, #ffffff 100%);
+        background: #242943;
     padding: 15px;
 }
 
@@ -30,7 +30,7 @@ body {
 }
 
 .chat-header {
-    background: linear-gradient(135deg, #6572e6 0%, #5c67e0 100%);
+    background: linear-gradient(135deg, #f56a6a 100%);
     color: #ffffff;
     padding: 15px 25px;
     border-radius: 20px 20px 0 0;
@@ -271,7 +271,7 @@ body {
     padding: 8px 15px;
     border: none;
     border-radius: 18px;
-    background-color: #5C67E0; /* Cor principal */
+    background-color: #f56a6a, /* Cor principal */
     color: white;
     cursor: pointer;
     font-size: 0.9em;
@@ -279,8 +279,8 @@ body {
 }
 
 .chat-button:hover {
-    background-color: #4a56c0; /* Cor mais escura no hover */
-    background-color: #4a56c0;
+    background-color: #f56a6a,/* Cor mais escura no hover */
+    background-color: #f56a6a, 
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
@@ -321,7 +321,7 @@ body {
 }
 
 #send-button {
-    background: linear-gradient(135deg, #6572e6, #5c67e0);
+    background: linear-gradient(135deg, #f56a6a, #f56a6a);
     color: white;
     border: none;
     width: 44px;
@@ -338,7 +338,7 @@ body {
 }
 
 #send-button:hover {
-    background: linear-gradient(135deg, #5c67e0, #4a56c0);
+    background: linear-gradient(135deg, #f56a6a, #f56a6a);
     transform: scale(1.35);
     box-shadow: 0 5px 10px rgba(0,0,0,0.15);
 }
@@ -419,4 +419,9 @@ body {
      .message-wrapper.bot .avatar {
         font-size: 1.1em;
      }
+}
+/* ...adicione ao final do style.css... */
+body {
+    background: url('images/estudantebackground.jpg') center center/cover no-repeat;
+    background-color: #242943; /* cor de fundo caso a imagem não carregue */
 }

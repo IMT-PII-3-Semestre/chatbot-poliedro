@@ -271,7 +271,7 @@ body {
     padding: 8px 15px;
     border: none;
     border-radius: 18px;
-    background-color: #f56a6a, /* Cor principal */
+    background-color: #f56a6a; /* Cor principal */
     color: white;
     cursor: pointer;
     font-size: 0.9em;
@@ -279,8 +279,8 @@ body {
 }
 
 .chat-button:hover {
-    background-color: #f56a6a,/* Cor mais escura no hover */
-    background-color: #f56a6a, 
+    background-color: #f56a6a;/* Cor mais escura no hover */
+    background-color: #f56a6a; 
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }

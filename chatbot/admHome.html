@@ -17,6 +17,29 @@
 <!-- Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        new Swiper('.swiper-container', {
+            loop: true,
+            lidesPerView: 1,
+            spaceBetween: 20,
+            pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+        // Opcional: ajuste automação
+        autoplay: {
+            delay: 5000,
+            disableOnInteraction: false,
+        }
+        });
+    });
+    </script>
+
 	<body class="landing is-preload">
 
 		<!-- Page Wrapper -->
@@ -38,8 +61,7 @@
 										<ul>
 											<li><a href="index.html">Home</a></li>
 											<li><a href="generic.html">Cardápio</a></li>
-											<li><a href="elements.html">Faça seu pedido</a></li>
-											<li><a href="admHome.html">Restaurante - Adm</a></li>
+											<li><a href="kds.html">KDS - Adm</a></li>
 											<li><a href="#">Sign Up</a></li>
 											<li><a href="#">Log In</a></li>
 										</ul>
@@ -66,29 +88,41 @@
 				
 
 				<!-- Two -->
-					<section id="two" class="wrapper alt style2">
-						<section class="spotlight">
-							<div class="image"><img src="images/pic01.jpg" alt="" /></div><div class="content">
-								<h2>x-salada<br />
-								r$20,00</h2>
-								<p>Um clássico irresistível! Pão macio com hambúrguer suculento, queijo derretido, alface crocante, tomate fresco e maionese cremosa. Simples, delicioso e perfeito pra qualquer hora do dia.</p>
-							</div>
-						</section>
-						<section class="spotlight">
-							<div class="image"><img src="images/pic02.jpg" alt="" /></div><div class="content">
-								<h2>Água Mineral<br />
-								r$5,00</h2>
-								<p>Para quem prefere uma opção leve e saudável, a água mineral é ideal. Sempre geladinha, perfeita para acompanhar sua refeição e se manter hidratado durante o dia.</p>
-							</div>
-						</section>
-						<section class="spotlight">
-							<div class="image"><img src="images/pic03.jpg" alt="" /></div><div class="content">
-								<h2>Batata frita<br />
-								r$12,00</h2>
-								<p>Clássica e crocante! Porção de batatas fritas douradas, sequinhas e saborosas. O acompanhamento perfeito pra qualquer lanche.</p>
-							</div>
-						</section>
-					</section>
+				<section id="two" class="wrapper alt style2">
+                    <div class="swiper-container">
+                        <div class="swiper-wrapper">
+                        <!-- Slide 1 -->
+                        <div class="swiper-slide spotlight">
+                            <div class="image"><img src="images/pic01.jpg" alt="X-Salada" /></div>
+                            <div class="content">
+                                <h2>x-salada<br />R$ 20,00</h2>
+                                <p>Um clássico irresistível! Pão macio com hambúrguer suculento, queijo derretido, alface crocante, tomate fresco e maionese cremosa. Simples, delicioso e perfeito pra qualquer hora do dia.</p>
+                            </div>
+                        </div>
+                        <!-- Slide 2 -->
+                        <div class="swiper-slide spotlight">
+                            <div class="image"><img src="images/pic02.jpg" alt="Água Mineral" /></div>
+                            <div class="content">
+                                <h2>Água Mineral<br />R$ 5,00</h2>
+                                <p>Para quem prefere uma opção leve e saudável, a água mineral é ideal. Sempre geladinha, perfeita para acompanhar sua refeição e se manter hidratado durante o dia.</p>
+                            </div>
+                        </div>
+                        <!-- Slide 3 -->
+                        <div class="swiper-slide spotlight">
+                            <div class="image"><img src="images/pic03.jpg" alt="Batata Frita" /></div>
+                            <div class="content">
+                                <h2>Batata frita<br />R$ 12,00</h2>
+                                <p>Clássica e crocante! Porção de batatas fritas douradas, sequinhas e saborosas. O acompanhamento perfeito pra qualquer lanche.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Paginação -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Botões de navegação -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
+                    </div>
+                </section>
 
 				
 				<!-- Footer -->

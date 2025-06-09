@@ -3562,7 +3562,7 @@ input, select, textarea {
 			}
 
 				
-				#two .swiper-container {
+		#two .swiper-container {
 		width: 100%;
 		max-width: 960px;
 		margin: 0 auto;
@@ -3590,7 +3590,7 @@ input, select, textarea {
 
 		#two .swiper-slide .content {
 		flex: 1 1 50%;
-		padding: 1em;
+		padding: 1.5em;
 		}
 
 		#two .swiper-slide .content h2 {
@@ -3604,7 +3604,7 @@ input, select, textarea {
 
 		#two .swiper-button-prev,
 		#two .swiper-button-next {
-		color: #333;
+		color: whitesmoke;
 		}
 
 		/* Ajustes de responsividade */

@@ -262,10 +262,11 @@
 
     // Depois de ler todos (sincrono ou async), atualiza slideData e rebuild
     Promise.all(readPromises).then(results => {
-      slideData = results.filter(item => item.imgSrc); // opcional: poderia permitir sem imgSrc, mas filtramos sem imgSrc
-      rebuildSlides();
-      closeModal();
-    });
+     slideData = results.filter(item => item.imgSrc);
+     rebuildSlides();
++    persistSlidesToLocal();   // <-- salva no localStorage
+     closeModal();
+   });
   }
 
   // Ao clicar em “Adicionar Novo Slide”
@@ -287,6 +288,15 @@
   });
   addSlideBtn.addEventListener('click', addNewSlideForm);
   saveBtn.addEventListener('click', saveChanges);
+
+  function persistSlidesToLocal() {
+    try {
+        localStorage.setItem('poliedroSlides', JSON.stringify(slideData));
+        console.log('Slides salvos com sucesso no localStorage');
+    } catch (e) {
+        console.error('Falha ao salvar slides:', e);
+    }
+  }
 
   // Se quiser carregar slideData / formulários somente após Swiper estar pronto, você pode aguardar DOMContentLoaded.
   // Aqui assumimos que este script é incluído após inicialização do Swiper.

@@ -29,16 +29,19 @@ body {
     overflow: hidden;
 }
 
+/* Estilos do Cabeçalho do Chat */
 .chat-header {
-    background: linear-gradient(135deg, #f56a6a 100%);
-    color: #ffffff;
-    padding: 15px 25px;
+    background: linear-gradient(135deg, #f56a6a, #e05252); /* Cor principal do tema */
+    color: white;
+    padding: 15px 20px; /* Ajuste o padding conforme necessário */
     border-radius: 20px 20px 0 0;
-    flex-shrink: 0;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    position: relative;
-    z-index: 1;
+    display: flex; /* Adicionado */
+    align-items: center; /* Adicionado para alinhar verticalmente os itens */
+    justify-content: space-between; /* Adicionado para espaçar o texto e o botão */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    position: relative; /* Para o efeito de sobreposição, se houver */
 }
+
 /* Efeito de brilho sutil no cabeçalho */
 .chat-header::before {
     content: '';
@@ -52,10 +55,10 @@ body {
     pointer-events: none;
 }
 
-
 .header-content {
     display: flex;
     align-items: center;
+    /* margin-right: auto; Removido ou ajustado se necessário, pois space-between cuidará do espaçamento */
 }
 
 .header-content i.fa-robot {
@@ -73,9 +76,10 @@ body {
     cursor: pointer;
     font-size: 0.85em;
     transition: background-color 0.2s, color 0.2s;
-    margin-left: auto; /* Alinha à direita se o header-content não ocupar todo o espaço */
+    /* margin-left: auto; Removido, pois justify-content: space-between no pai cuidará disso */
     display: flex;
     align-items: center;
+    flex-shrink: 0; /* Impede que o botão encolha se não houver espaço */
 }
 
 .chat-header-button i {

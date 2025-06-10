@@ -283,12 +283,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** Inicia uma nova conversa, limpando o histórico e reiniciando a sessão */
     function startNewChat() {
-        chatMessages.innerHTML = ''; // Limpa mensagens da tela
-        currentCart = []; // Limpa o carrinho local
-        updateCartDisplay(); // Atualiza a exibição do carrinho (para esvaziar)
-        appendMessage('bot', 'Olá! Sou o assistente virtual do Restaurante Poliedro. 👋<br>Como posso ajudar você hoje?');
-        chatInput.focus();
-        logging.info("Nova sessão de chat iniciada.");
+        chatBox.innerHTML = ''; // Limpa as mensagens da tela
+        // O carrinho (session['cart'] do backend) é a fonte da verdade.
+        // A exibição do carrinho no frontend é atualizada com base na resposta da API.
+        // Não há necessidade de currentCart ou updateCartDisplay aqui se o fluxo for esse.
+        
+        addMessage("Olá! Sou o assistente virtual do Restaurante Poliedro. 👋", 'bot');
+        addMessage("Como posso ajudar você hoje?", 'bot');
+        userInput.focus();
+        console.log("Interface de nova conversa iniciada no frontend."); // Para depuração
     }
 
     // --- Event Listeners ---

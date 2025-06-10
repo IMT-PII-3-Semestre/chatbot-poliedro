@@ -249,7 +249,7 @@ input, select, textarea {
 	}
 
 	code {
-		background: rgba(144, 144, 144, 0.25);
+		background: rgba(144, 144, 144, 0.75);
 		border-radius: 3px;
 		font-family: "Courier New", monospace;
 		font-size: 0.9em;

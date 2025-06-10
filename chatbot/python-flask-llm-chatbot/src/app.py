@@ -127,6 +127,8 @@ def get_request_description(method, path):
         return "Requisição OPTIONS (preflight) para o chat"
     elif method == 'POST' and path == '/chat':
         return "Requisição para enviar mensagem ao chat"
+    elif method == 'POST' and path == '/chat/reset_session': # ADD THIS
+        return "Requisição para resetar a sessão do chat"     # ADD THIS
     # Adicione outras descrições personalizadas conforme necessário
     return f"Requisição {method} para {path}"
 
@@ -291,6 +293,15 @@ def chat():
 
     session.modified = True # Garante que a sessão seja salva
     return jsonify(final_response_data)
+
+# --- Endpoint para Resetar a Sessão do Chat ---
+@app.route('/chat/reset_session', methods=['POST'])
+def reset_chat_session():
+    session.pop('conversation_history', None)
+    session.pop('cart', None)
+    session.pop('last_bot_message', None)
+    logging.info("Sessão do chat resetada (histórico, carrinho, última mensagem do bot).")
+    return jsonify({"message": "Sessão do chat resetada com sucesso."}), 200
 
 # --- Endpoint: Gerenciar Cardápio (KDS Admin) ---
 @app.route('/menu', methods=['GET', 'POST'])

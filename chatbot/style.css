@@ -180,7 +180,7 @@ body {
 
 .message-wrapper.user .avatar {
     margin-left: 10px;
-    background: linear-gradient(135deg, #5c67e0, #4a56c0);
+    background: linear-gradient(135deg, #f68080, #ef3333); /* Gradiente para o avatar do usuário */
     /* A letra inicial pode ser alterada no JS */
 }
 .message-wrapper.bot .avatar {
@@ -210,7 +210,7 @@ body {
 }
 
 .message-wrapper.user .message {
-    background-color: #5C67E0;
+    background-color: #f56a6a; /* Cor de fundo da mensagem do usuário */
     color: #ffffff;
     border-bottom-right-radius: 0px; /* Quebra o arredondamento para a cauda */
 }
@@ -234,7 +234,7 @@ body {
 
 .message-wrapper.user .message::before {
     right: -10px;
-    border-left-color: #5C67E0;
+    border-left-color: #f56a6a;
     border-right: 0;
     border-bottom: 0;
 }

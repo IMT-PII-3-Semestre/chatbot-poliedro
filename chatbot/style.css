@@ -16,6 +16,68 @@ body {
     padding: 15px;
 }
 
+/* Styles for blurred and less opaque background on chat page */
+body.chat-page-background {
+    position: relative; /* Establishes a stacking context */
+    overflow: hidden; /* Prevents scrollbars if blur extends slightly */
+}
+
+body.chat-page-background::before {
+    content: "";
+    position: fixed; /* Covers the entire viewport */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Assuming banner.jpg is in the 'images' folder relative to where index.html is, 
+       and style.css is in the same directory or a path that resolves correctly.
+       If your main.css uses ../../images/banner.jpg from assets/css, 
+       and style.css is in chatbot/, and images are in chatbot/images/, 
+       then "images/banner.jpg" should be correct.
+       Adjust if your image is named or located differently (e.g., "images/estudantebackground.jpg"). */
+    background-image: url("images/banner.jpg"); 
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    filter: blur(8px); /* Adjust the blur amount (e.g., 5px, 8px, 10px) as desired */
+    z-index: -1; /* Places the pseudo-element behind all other page content */
+    /* Optional: to ensure it covers even if body has a default background color */
+    background-color: #2e3842; /* Fallback or base color, matches main.css body background */
+}
+
+/* Back to Home Button */
+#back-to-home-button {
+    position: fixed; /* Or absolute if body.chat-page-background is the positioning context */
+    top: 20px;
+    left: 20px;
+    z-index: 1000; /* Ensure it's above other elements like the chat container */
+    background-color: rgba(255, 255, 255, 0.2); /* Semi-transparent white */
+    color: #ffffff; /* White icon */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%; /* Makes it circular */
+    width: 45px;  /* Adjust size as needed */
+    height: 45px; /* Adjust size as needed */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 1.2em; /* Adjust icon size */
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+#back-to-home-button:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+}
+
+/* Ensure the chat container is positioned above the blurred background */
+.chat-container {
+    position: relative; /* Ensures it respects z-index stacking */
+    z-index: 1; /* Or any value higher than the pseudo-element's z-index if needed */
+    /* The existing styles for .chat-container (background, etc.) will make it appear on top */
+}
+
 .chat-container {
     width: 100%;
     max-width: 550px;
@@ -430,9 +492,4 @@ body {
      .message-wrapper.bot .avatar {
         font-size: 1.1em;
      }
-}
-/* ...adicione ao final do style.css... */
-body {
-    background: url('images/estudantebackground.jpg') center center/cover no-repeat;
-    background-color: #242943; /* cor de fundo caso a imagem não carregue */
 }

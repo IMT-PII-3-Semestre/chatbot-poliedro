@@ -127,8 +127,8 @@ def get_request_description(method, path):
         return "Requisição OPTIONS (preflight) para o chat"
     elif method == 'POST' and path == '/chat':
         return "Requisição para enviar mensagem ao chat"
-    elif method == 'POST' and path == '/chat/reset_session': # ADD THIS
-        return "Requisição para resetar a sessão do chat"     # ADD THIS
+    elif method == 'POST' and path == '/chat/reset_session':
+        return "Requisição para resetar a sessão do chat"
     # Adicione outras descrições personalizadas conforme necessário
     return f"Requisição {method} para {path}"
 

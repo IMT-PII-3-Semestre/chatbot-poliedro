@@ -279,7 +279,7 @@ body {
     padding: 8px 15px;
     border: none;
     border-radius: 18px;
-    background-color: #f56a6a; /* Cor principal - REMOVIDA VÍRGULA EXTRA */
+    background-color: #0ad81c; /* Cor principal*/
     color: white;
     cursor: pointer;
     font-size: 0.9em;
@@ -287,7 +287,7 @@ body {
 }
 
 .chat-button:hover {
-    background-color: #e05252;/* Cor mais escura no hover - AJUSTADA COR E REMOVIDA VÍRGULA EXTRA, REMOVIDA DUPLICATA */
+    background-color: #079013;/* Cor mais escura no hover - AJUSTADA COR E REMOVIDA VÍRGULA EXTRA, REMOVIDA DUPLICATA */
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }

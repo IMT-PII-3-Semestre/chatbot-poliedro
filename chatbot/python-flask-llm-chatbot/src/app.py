@@ -162,136 +162,128 @@ def chat():
         session['conversation_history'] = []
     if 'last_bot_message' not in session:
         session['last_bot_message'] = ""
+    # session.get('awaiting_client_name') will be used to check the state
 
     final_response_data = {"response": None, "cart": list(session.get('cart', []))}
-    current_menu_data = load_menu_data() # Carrega o cardápio atual para o handler
+    current_menu_data = load_menu_data() 
+    brasilia_tz = pytz.timezone('America/Sao_Paulo')
 
-    last_bot_message_for_confirmation = session.get('last_bot_message', '').strip()
-    # Verifica se a resposta do usuário é uma confirmação direta a uma pergunta do bot
-    is_direct_confirmation_response = user_input.lower() in ["sim", "não"] and \
-                                      last_bot_message_for_confirmation.endswith("Correto?")
+    # Scenario 1: Bot was waiting for the client's name
+    if session.get('awaiting_client_name'):
+        client_name = user_input # User's current message is taken as the name
+        session.pop('awaiting_client_name', None) # Clear the flag
 
-    brasilia_tz = pytz.timezone('America/Sao_Paulo') # Define o fuso horário de Brasília
-
-    if is_direct_confirmation_response:
-        confirmation_intent_result = user_input.lower()
-        logging.info(f"Confirmação direta recebida do frontend: '{confirmation_intent_result}'")
+        if not session.get('cart'):
+            final_response_data["response"] = "Seu carrinho está vazio. Não posso finalizar um pedido sem itens."
+            # session['conversation_history'] is not cleared here, user might want to add items.
+        else:
+            order_details_text, total_calculated = chatbot_handler.format_order_details(
+                session['cart'], current_menu_data, include_total=True, for_confirmation=False
+            )
+            final_response_data["response"] = f"Ótimo, {client_name}! Seu pedido foi anotado e enviado para a cozinha!"
+            final_order_payload = {
+                "client_name": client_name, # Added client_name
+                "items": list(session['cart']),
+                "total": str(total_calculated),
+                "order_details_text": order_details_text,
+                "timestamp": datetime.datetime.now(brasilia_tz),
+                "status": "Pendente"
+            }
+            final_response_data['final_order'] = final_order_payload
+    
+            if orders_collection is not None:
+                try:
+                    insert_result = orders_collection.insert_one(final_order_payload)
+                    logging.info(f"Pedido finalizado para {client_name} e salvo no MongoDB com ID: {insert_result.inserted_id}")
+                    if '_id' in final_order_payload: # For returning to frontend if needed
+                        final_order_payload['_id'] = str(final_order_payload['_id'])
+                except OperationFailure as e:
+                    logging.error(f"Falha ao salvar pedido no MongoDB para {client_name}: {e.details}")
+                except Exception as e:
+                    logging.exception(f"Erro inesperado ao salvar pedido no MongoDB para {client_name}.")
+            else:
+                logging.warning(f"MongoDB não configurado. Pedido para {client_name} não foi salvo no banco de dados.")
+    
+            logging.info(f"Pedido finalizado para {client_name}: {session['cart']}")
+            session['cart'] = [] # Clear cart after successful order
+            session['conversation_history'] = [] # Clear conversation history for a fresh start
+            session['last_bot_message'] = "" # Clear last bot message
         
-        if confirmation_intent_result == "sim":
+    else: # Bot was NOT waiting for a name, proceed with normal logic
+        last_bot_message_for_confirmation = session.get('last_bot_message', '').strip()
+        is_direct_sim_confirmation = user_input.lower() == "sim" and \
+                                     last_bot_message_for_confirmation.endswith("Correto?")
+        is_direct_nao_confirmation = user_input.lower() == "não" and \
+                                     last_bot_message_for_confirmation.endswith("Correto?")
+
+        if is_direct_sim_confirmation:
+            logging.info("Confirmação 'sim' direta recebida do frontend.")
             if not session.get('cart'):
                 final_response_data["response"] = "Seu carrinho está vazio. Adicione itens antes de finalizar."
             else:
-                order_details_text, total_calculated = chatbot_handler.format_order_details(
-                    session['cart'], current_menu_data, include_total=True, for_confirmation=False
-                )
-                final_response_data["response"] = "Ótimo! Seu pedido foi anotado e enviado para a cozinha!"
-                final_order_payload = {
-                    "items": list(session['cart']),
-                    "total": str(total_calculated),
-                    "order_details_text": order_details_text,
-                    "timestamp": datetime.datetime.now(brasilia_tz),
-                    "status": "Pendente"
-                }
-                # final_response_data['final_order'] recebe final_order_payload.
-                # Se final_order_payload for alterado por insert_one, final_response_data['final_order'] refletirá isso.
-                final_response_data['final_order'] = final_order_payload
-    
-                if orders_collection is not None:
-                    try:
-                        # O método insert_one do PyMongo altera final_order_payload adicionando _id.
-                        insert_result = orders_collection.insert_one(final_order_payload)
-                        logging.info(f"Pedido finalizado e salvo no MongoDB com ID: {insert_result.inserted_id}")
-                        # Converte ObjectId para string para serialização JSON.
-                        if '_id' in final_order_payload:
-                            final_order_payload['_id'] = str(final_order_payload['_id'])
-                    except OperationFailure as e:
-                        logging.error(f"Falha ao salvar pedido no MongoDB: {e.details}")
-                    except Exception as e:
-                        logging.exception("Erro inesperado ao salvar pedido no MongoDB.")
-                else:
-                    logging.warning("MongoDB não configurado. Pedido não foi salvo no banco de dados.")
-    
-                logging.info(f"Pedido finalizado via botão 'Sim': {session['cart']}")
-                session['cart'] = []
-                session['conversation_history'] = []
-                session['last_bot_message'] = ""
-        else: # Resposta "não"
-            final_response_data["response"] = "Entendido. O que você gostaria de alterar ou adicionar?"
+                # Instead of finalizing, set flag and ask for name
+                session['awaiting_client_name'] = True
+                final_response_data["response"] = "Entendido. Para finalizar, por favor, me diga seu nome."
+                # Cart and history are preserved. Order not saved yet.
         
-    else: # Não é uma confirmação direta, processa com o LLM
-        try:
-            processed_output = chatbot_handler.process_input(
-                user_input,
-                list(session.get('cart', [])),
-                list(session.get('conversation_history', [])),
-                session.get('last_bot_message', ''),
-                current_menu_data
-            )
-
-            final_response_data["response"] = processed_output.get("llm_response")
-            action = processed_output.get("action")
+        elif is_direct_nao_confirmation:
+            logging.info("Confirmação 'não' direta recebida do frontend.")
+            final_response_data["response"] = "Entendido. O que você gostaria de alterar ou adicionar?"
             
-            session['cart'] = processed_output.get("cart_updated", list(session.get('cart', [])))
+        else: # Not a direct "sim" or "não" confirmation, process with LLM/Handler
+            try:
+                processed_output = chatbot_handler.process_input(
+                    user_input,
+                    list(session.get('cart', [])),
+                    list(session.get('conversation_history', [])),
+                    session.get('last_bot_message', ''),
+                    current_menu_data
+                )
 
-            if action == "needs_confirmation":
-                logging.info(f"Handler indica necessidade de confirmação. Carrinho para confirmar: {session['cart']}")
+                final_response_data["response"] = processed_output.get("llm_response")
+                action = processed_output.get("action")
+                session['cart'] = processed_output.get("cart_updated", list(session.get('cart', [])))
 
-            elif action == "finalize_order_confirmed":
-                if not session.get('cart'):
-                    final_response_data["response"] = "Seu carrinho está vazio. Adicione itens antes de finalizar."
-                else:
-                    order_details_text, total_calculated = chatbot_handler.format_order_details(
-                        session['cart'], current_menu_data, include_total=True, for_confirmation=False
-                    )
-                    final_order_payload = {
-                        "items": list(session['cart']),
-                        "total": str(total_calculated),
-                        "order_details_text": order_details_text,
-                        "timestamp": datetime.datetime.now(brasilia_tz),
-                        "status": "Pendente"
-                    }
-                    final_response_data['final_order'] = final_order_payload
-    
-                    if orders_collection is not None:
-                        try:
-                            insert_result = orders_collection.insert_one(final_order_payload)
-                            logging.info(f"Pedido (confirmado pelo LLM) salvo no MongoDB com ID: {insert_result.inserted_id}")
-                            if '_id' in final_order_payload:
-                                final_order_payload['_id'] = str(final_order_payload['_id'])
-                        except OperationFailure as e:
-                            logging.error(f"Falha ao salvar pedido (confirmado pelo LLM) no MongoDB: {e.details}")
-                        except Exception as e:
-                            logging.exception("Erro inesperado ao salvar pedido (confirmado pelo LLM) no MongoDB.")
+                if action == "needs_confirmation":
+                    logging.info(f"Handler indica necessidade de confirmação. Carrinho para confirmar: {session['cart']}")
+                    # The response from handler (asking "Correto?") is already in final_response_data["response"]
+
+                elif action == "finalize_order_confirmed": # LLM or handler decided to finalize
+                    logging.info("Handler indica que o pedido foi confirmado.")
+                    if not session.get('cart'):
+                        final_response_data["response"] = "Seu carrinho está vazio. Adicione itens antes de finalizar."
                     else:
-                        logging.warning("MongoDB não configurado. Pedido (confirmado pelo LLM) não foi salvo no banco de dados.")
-    
-                    logging.info(f"Pedido finalizado (confirmado pelo LLM via handler): {session['cart']}")
-                    session['cart'] = []
-                    session['conversation_history'] = []
-                    session['last_bot_message'] = ""
+                        # Instead of finalizing directly, set flag and ask for name
+                        session['awaiting_client_name'] = True
+                        # Override LLM's finalization message to ask for name
+                        final_response_data["response"] = "Entendido. Para finalizar, por favor, me diga seu nome."
+                
+                elif action == "clear_cart":
+                    logging.info("Carrinho limpo conforme instrução do handler.")
+                    session['cart'] = [] # Ensure cart is cleared in session
 
-            elif action == "clear_cart":
-                logging.info("Carrinho limpo conforme instrução do handler.")
+            except Exception as e:
+                logging.exception("Erro ao chamar chatbot_handler.process_input ou ao processar sua saída.")
+                final_response_data["response"] = "Desculpe, ocorreu um erro interno ao processar sua mensagem. Tente novamente mais tarde."
 
-        except Exception as e:
-            logging.exception("Erro ao chamar chatbot_handler.process_input ou ao processar sua saída.")
-            final_response_data["response"] = "Desculpe, ocorreu um erro interno ao processar sua mensagem. Tente novamente mais tarde."
-
-    final_response_data["cart"] = list(session.get('cart', []))
+    # Common logic for updating session and returning response
+    final_response_data["cart"] = list(session.get('cart', [])) # Reflect cart changes (e.g., cleared after order)
     session['last_bot_message'] = final_response_data.get("response")
 
-    # Adiciona a interação atual ao histórico da conversa
+    # Add current interaction to history.
+    # If an order was just successfully placed, session['conversation_history'] was cleared.
+    # So, this will add the final user message (name) and bot confirmation as the start of a new history.
     if user_input:
-        session['conversation_history'].append({"role": "user", "content": user_input})
+         session['conversation_history'].append({"role": "user", "content": user_input})
     if final_response_data.get("response"):
         session['conversation_history'].append({"role": "assistant", "content": final_response_data["response"]})
     
-    # Limita o tamanho do histórico da conversa
-    MAX_HISTORY_LEN = 10
+    # Limit history size. This applies even if history was just cleared (it will be short).
+    MAX_HISTORY_LEN = 10 
     if len(session.get('conversation_history', [])) > MAX_HISTORY_LEN:
         session['conversation_history'] = session['conversation_history'][-MAX_HISTORY_LEN:]
 
-    session.modified = True # Garante que a sessão seja salva
+    session.modified = True 
     return jsonify(final_response_data)
 
 # --- Endpoint para Resetar a Sessão do Chat ---

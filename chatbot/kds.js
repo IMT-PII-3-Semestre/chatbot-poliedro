@@ -162,9 +162,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // Poderia adicionar botões para pedidos Prontos aqui, como "Reabrir"
 
+            const clientNameHtml = order.client_name ? `<span class="order-client-name"><i class="fas fa-user"></i> ${order.client_name}</span>` : '';
+
             listItem.innerHTML = `
                 <div class="order-header">
                     <span class="order-id">Pedido #${order._id.slice(-6)}</span>
+                    ${clientNameHtml}
                     <span class="order-time"><i class="fas fa-clock"></i> ${orderDateTimeFormatted}</span>
                 </div>
                 <div class="order-body">

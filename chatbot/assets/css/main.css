@@ -3678,7 +3678,7 @@ input, select, textarea {
 	right: 0.5em;
 	background: transparent;
 	border: none;
-	font-size: 1.2em;
+	font-size: 0.5em;
 	color: #a00;
 	cursor: pointer;
 	}
@@ -4221,4 +4221,29 @@ body #banner::after {
     .slide-content {
         text-align: left;
     }
+}
+/* Botão de escolher arquivo laranja igual ao de Gerenciar Cardápio */
+.carousel-slide-form input[type="file"]::-webkit-file-upload-button {
+    background: #f39c12;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5em 1.2em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.carousel-slide-form input[type="file"]::file-selector-button {
+    background: #f39c12;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5em 1.2em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.carousel-slide-form input[type="file"]:hover::-webkit-file-upload-button,
+.carousel-slide-form input[type="file"]:hover::file-selector-button {
+    background: #e67e22;
 }

@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Variável para guardar a referência ao indicador de digitação
     let typingIndicatorElement = null;
 
+    const FLASK_API_BASE_URL = 'http://127.0.0.1:5000'; // Certifique-se que esta constante está definida
+
     // --- Funções Auxiliares ---
 
     /** Gera um ID único para o pedido (simplificado) */
@@ -282,13 +284,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /** Inicia uma nova conversa, limpando o histórico e reiniciando a sessão */
-    function startNewChat() {
-        chatMessages.innerHTML = ''; // Limpa mensagens da tela
-        currentCart = []; // Limpa o carrinho local
-        updateCartDisplay(); // Atualiza a exibição do carrinho (para esvaziar)
-        appendMessage('bot', 'Olá! Sou o assistente virtual do Restaurante Poliedro. 👋<br>Como posso ajudar você hoje?');
-        chatInput.focus();
-        logging.info("Nova sessão de chat iniciada.");
+    async function startNewChat() { // Tornar a função assíncrona
+        console.log("Frontend: Iniciando nova conversa. Tentando resetar sessão do backend...");
+        try {
+            const response = await fetch(`${FLASK_API_BASE_URL}/chat/reset_session`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include' // Envia cookies para manter a sessão
+                // Não é necessário enviar body para este endpoint
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Frontend: Sessão do backend resetada com sucesso:", data.message);
+            } else {
+                console.error("Frontend: Falha ao resetar a sessão do backend.", response.status, response.statusText);
+                // Opcional: informar ao usuário que o reset completo pode não ter ocorrido.
+                addMessage("Houve um problema ao tentar reiniciar completamente a conversa com o servidor. A interface foi limpa, mas o contexto antigo pode persistir.", 'bot');
+            }
+        } catch (error) {
+            console.error("Frontend: Erro de rede ao tentar resetar a sessão do backend.", error);
+            addMessage("Erro de rede ao tentar reiniciar a conversa com o servidor. A interface foi limpa, mas o contexto antigo pode persistir.", 'bot');
+        }
+
+        // Limpa a interface do chat no frontend independentemente do sucesso do backend, para melhor UX.
+        chatBox.innerHTML = ''; 
+        
+        addMessage("Olá! Sou o assistente virtual do Restaurante Poliedro. 👋", 'bot');
+        addMessage("Como posso ajudar você hoje?", 'bot');
+        userInput.focus();
+        console.log("Frontend: Interface de nova conversa iniciada.");
     }
 
     // --- Event Listeners ---

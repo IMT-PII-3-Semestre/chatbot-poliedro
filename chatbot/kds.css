@@ -146,6 +146,17 @@ body {
     color: #333;
 }
 
+.kds-order-item .order-client-name {
+    font-size: 0.95em;
+    color: #444;
+    margin: 0 10px; /* Adds some spacing around the name */
+}
+
+.kds-order-item .order-client-name .fas {
+    margin-right: 4px;
+    color: #666;
+}
+
 .kds-order-item .order-time {
     font-size: 0.9em; /* Tamanho da fonte do horário */
     color: #555;

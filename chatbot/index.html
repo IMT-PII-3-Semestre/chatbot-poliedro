@@ -11,7 +11,10 @@
     
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 </head>
-<body>
+<body class="chat-page-background">
+    <a href="home.html" id="back-to-home-button" aria-label="Voltar para Home">
+        <i class="fas fa-arrow-left"></i>
+    </a>
     <div class="chat-container animate__animated animate__bounceIn">
         <div class="chat-header">
              <div class="header-content">
@@ -22,6 +25,9 @@
                     <p>Assistente de Pedidos do Restaurante</p>
                 </div>
             </div>
+            <button id="new-chat-button" class="chat-header-button" aria-label="Nova Conversa">
+                <i class="fas fa-plus"></i> Nova Conversa
+            </button>
         </div>
         <div class="chat-box" id="chat-box">
             <!-- As mensagens do chat serão inseridas aqui via JavaScript -->

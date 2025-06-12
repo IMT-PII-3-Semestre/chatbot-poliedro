@@ -23,7 +23,7 @@ Para complementar, um sistema KDS (Kitchen Display System) foi integrado para qu
 -   **Scrum Master**: Henrique Impastaro – RA: 24.01777-9 
 -   **Desenvolvedores**:
     -   Arthur Trindade de Souza – RA: 24.00204-6       
-    -   Henrique Impastaro – RA: 24.01777-9 
+    -   Henrique Impastaro – RA: 24.01777-9   
     -   Murilo Rodrigues – RA: 24.01780-9 
     -   Pedro Henrique de Paiva Bittencourt – RA: 24.00162-7 
     -   Thiago Arevolo De Azevedo – RA: 23.01294-3     

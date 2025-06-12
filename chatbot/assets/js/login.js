@@ -43,7 +43,7 @@ signupForm.addEventListener('submit', function(e) {
 
   // Validações
   if (!email.endsWith('@poliedro.com.br')) {
-    alert('O email deve terminar com @poliedro.com.br');
+    alert('O email não é valido para cadastro.');
     return;
   }
   if (pwd.length < 6) {

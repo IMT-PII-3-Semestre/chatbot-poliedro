@@ -12,6 +12,67 @@
 <!-- Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Tenta ler os slides salvos
+  let stored = localStorage.getItem('poliedroSlides');
+  let slides = [];
+
+  if (stored) {
+    try {
+      slides = JSON.parse(stored);
+    } catch (e) {
+      console.error('Erro ao parsear slides do localStorage', e);
+    }
+  }
+
+  const wrapper = document.querySelector('#two .swiper-wrapper');
+
+  if (slides.length > 0) {
+    // Cria cada slide a partir dos dados
+    slides.forEach(item => {
+      const slide = document.createElement('div');
+      slide.className = 'swiper-slide spotlight';
+      slide.innerHTML = `
+        <div class="image"><img src="${item.imgSrc}" alt="${item.title}" /></div>
+        <div class="content">
+          <h2>${item.title}<br/>${item.price}</h2>
+          <p>${item.description}</p>
+        </div>`;
+      wrapper.appendChild(slide);
+    });
+  } else {
+    // Se não houver dados, você pode injetar fallback estático
+    wrapper.innerHTML = `
+      <div class="swiper-slide spotlight">
+        <div class="image"><img src="images/pic01.jpg" alt="" /></div>
+        <div class="content"><h2>x-salada<br/>R$20,00</h2><p>…</p></div>
+      </div>
+      <!-- outros slides padrão -->
+    `;
+  }
+
+  // Agora inicializa o Swiper
+  new Swiper('.swiper-container', {
+    loop: true,
+    slidesPerView: 1,
+    spaceBetween: 20,
+    pagination: {
+      el: '.swiper-pagination',
+      clickable: true,
+    },
+    navigation: {
+      nextEl: '.swiper-button-next',
+      prevEl: '.swiper-button-prev',
+    },
+    autoplay: {
+      delay: 5000,
+      disableOnInteraction: false,
+    }
+  });
+});
+</script>
+
 	<body class="landing is-preload">
 
 		<!-- Page Wrapper -->
@@ -19,25 +80,25 @@
 
 				<!-- Header -->
 					<header id="header" class="alt">
-    <h1>
-        <a href="index.html">
-            <img src="images/logo.png" alt="logo" style="height: 40px; vertical-align: middle; margin-right: 10px;">
-            Restaurante Poliedro
-        </a>
-    </h1>
+						<h1>
+							<a href="index.html">
+								<img src="images/logo.png" alt="logo" style="height: 40px; vertical-align: middle; margin-right: 10px;">
+								Restaurante Poliedro
+							</a>
+						</h1>
 						<nav id="nav">
 							<ul>
 								<li class="special">
 									<a href="#menu" class="menuToggle"><span>Menu</span></a>
 									<div id="menu">
 										<ul>
-                                            <li><a href="home.html">Home</a></li>
-                                            <li><a href="#cardapio">Cardápio</a></li>
-                                            <li><a href="index.html">Faça seu pedido</a></li>
-                                            <li><a href="kds.html">KDS - ADM</a></li>
-                                        </ul>
-                                    </div>
-                                </li>
+											<li><a href="index.html">Home</a></li>
+											<li><a href="#cardapio.html">Cardápio</a></li>
+											<li><a href="index.html">Faça seu pedido</a></li>
+											<li><a href="login.html">Sign Up</a></li>
+										</ul>
+									</div>
+								</li>
 							</ul>
 						</nav>
 					</header>
@@ -50,39 +111,23 @@
 							
 							 É rápido e prático!</a></p>
 							<ul class="actions special">
-    <li><a href="index.html" class="button primary">Faça seu pedido!</a></li>
-</ul>
+    							<li><a href="index.html" class="button primary">Faça seu pedido!</a></li>
+							</ul>
 						</div>
 						<a href="#cardapio" class="more scrolly">Cardápio</a>
 					</section>
 
-				
-
-				<!-- Cardapio -->
-					<section id="cardapio" class="wrapper alt style2">
-						<section class="spotlight">
-							<div class="image"><img src="images/pic01.jpg" alt="" /></div><div class="content">
-								<h2>x-salada<br />
-								r$20,00</h2>
-								<p>Um clássico irresistível! Pão macio com hambúrguer suculento, queijo derretido, alface crocante, tomate fresco e maionese cremosa. Simples, delicioso e perfeito pra qualquer hora do dia.</p>
+				<!-- Two -->
+					<section id="two" class="wrapper alt style2">
+						<div class="swiper-container">
+							<div class="swiper-wrapper">
+							<!-- Slides serão injetados via JavaScript -->
 							</div>
-						</section>
-						<section class="spotlight">
-							<div class="image"><img src="images/pic02.jpg" alt="" /></div><div class="content">
-								<h2>Água Mineral<br />
-								r$5,00</h2>
-								<p>Para quem prefere uma opção leve e saudável, a água mineral é ideal. Sempre geladinha, perfeita para acompanhar sua refeição e se manter hidratado durante o dia.</p>
-							</div>
-						</section>
-						<section class="spotlight">
-							<div class="image"><img src="images/pic03.jpg" alt="" /></div><div class="content">
-								<h2>Batata frita<br />
-								r$12,00</h2>
-								<p>Clássica e crocante! Porção de batatas fritas douradas, sequinhas e saborosas. O acompanhamento perfeito pra qualquer lanche.</p>
-							</div>
-						</section>
+							<div class="swiper-pagination"></div>
+							<div class="swiper-button-prev"></div>
+							<div class="swiper-button-next"></div>
+						</div>
 					</section>
-
 				
 				<!-- Footer -->
 					<footer id="footer">

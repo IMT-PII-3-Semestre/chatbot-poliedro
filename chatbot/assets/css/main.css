@@ -3561,6 +3561,174 @@ input, select, textarea {
 				opacity: 0;
 			}
 
+				
+		#two .swiper-container {
+		width: 100%;
+		max-width: 960px;
+		margin: 0 auto;
+		padding: 2em 0;
+		position: relative;
+		}
+
+		#two .swiper-slide {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-wrap: wrap;
+		}
+
+		#two .swiper-slide .image {
+		flex: 1 1 40%;
+		text-align: center;
+		}
+
+		#two .swiper-slide .image img {
+		width: 100%;
+		max-width: 300px;
+		border-radius: 8px;
+		}
+
+		#two .swiper-slide .content {
+		flex: 1 1 50%;
+		padding: 1.5em;
+		}
+
+		#two .swiper-slide .content h2 {
+		margin-bottom: 0.5em;
+		font-size: 1.5em;
+		}
+
+		#two .swiper-pagination {
+		bottom: 10px !important;
+		}
+
+		#two .swiper-button-prev,
+		#two .swiper-button-next {
+		color: whitesmoke;
+		}
+
+		/* Ajustes de responsividade */
+		@media screen and (max-width: 736px) {
+		#two .swiper-slide {
+			flex-direction: column;
+		}
+		#two .swiper-slide .image,
+		#two .swiper-slide .content {
+			flex: 1 1 100%;
+		}
+	}
+	
+	.carousel-admin-modal {
+	display: none; /* oculto inicialmente */
+	position: fixed;
+	z-index: 1000;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	background-color: rgba(0,0,0,0.5);
+	align-items: center;
+	justify-content: center;
+	}
+
+	.carousel-admin-modal-content {
+	background-color: black;
+	margin: 2em auto;
+	padding: 1.5em;
+	border-radius: 8px;
+	max-width: 600px;
+	width: 90%;
+	max-height: 90%;
+	overflow-y: auto;
+	position: relative;
+	box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+	}
+
+	.carousel-admin-close {
+	position: absolute;
+	top: 0.5em;
+	right: 1em;
+	font-size: 1.5em;
+	font-weight: bold;
+	color: #333;
+	cursor: pointer;
+	}
+
+	.carousel-admin-close:hover {
+	color: #000;
+	}
+
+	/* Estilo dos formulários internos */
+	.carousel-slide-form {
+	border: 1px solid #ccc;
+	padding: 1em;
+	border-radius: 6px;
+	margin-bottom: 1em;
+	position: relative;
+	}
+
+	.carousel-slide-form h4 {
+	margin-top: 0;
+	}
+
+	.carousel-slide-form .remove-slide-btn {
+	position: absolute;
+	top: 0.5em;
+	right: 0.5em;
+	background: transparent;
+	border: none;
+	font-size: 0.5em;
+	color: #a00;
+	cursor: pointer;
+	}
+
+	.carousel-slide-form .remove-slide-btn:hover {
+	color: #e00;
+	}
+
+	.carousel-slide-form label {
+	display: block;
+	margin-top: 0.75em;
+	font-weight: bold;
+	font-size: 0.9em;
+	}
+
+	.carousel-slide-form input[type="text"],
+	.carousel-slide-form textarea {
+	width: 100%;
+	padding: 0.5em;
+	margin-top: 0.3em;
+	border: 1px solid black;
+	border-radius: 4px;
+	font-size: 0.9em;
+	}
+
+	.carousel-slide-form input[type="file"] {
+	margin-top: 0.3em;
+	}
+
+	.carousel-slide-form .image-preview {
+	margin-top: 0.5em;
+	max-width: 100%;
+	max-height: 150px;
+	display: block;
+	}
+
+	/* Botões dentro do modal */
+	#add-slide-btn,
+	#save-carousel-btn {
+	cursor: pointer;
+	}
+
+	/* Responsividade */
+	@media screen and (max-width: 480px) {
+	.carousel-admin-modal-content {
+		padding: 1em;
+		margin: 1em auto;
+	}
+	}
+
 /* Banner */
 
 	#banner {
@@ -4053,4 +4221,29 @@ body #banner::after {
     .slide-content {
         text-align: left;
     }
+}
+/* Botão de escolher arquivo laranja igual ao de Gerenciar Cardápio */
+.carousel-slide-form input[type="file"]::-webkit-file-upload-button {
+    background: #f39c12;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5em 1.2em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.carousel-slide-form input[type="file"]::file-selector-button {
+    background: #f39c12;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5em 1.2em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.carousel-slide-form input[type="file"]:hover::-webkit-file-upload-button,
+.carousel-slide-form input[type="file"]:hover::file-selector-button {
+    background: #e67e22;
 }
